@@ -1,0 +1,31 @@
+move:
+  name: Move camera
+  description: Start or stop PTZ movement for a PTZ Proxy camera entity.
+  target:
+    entity:
+      domain: camera
+      integration: ptz_proxy
+  fields:
+    action:
+      name: Action
+      description: Start or stop camera movement.
+      required: true
+      selector:
+        select:
+          translation_key: ptz_action
+          options:
+            - start
+            - stop
+    direction:
+      name: Direction
+      description: Movement direction; all is valid only with stop.
+      required: true
+      selector:
+        select:
+          translation_key: ptz_direction
+          options:
+            - up
+            - down
+            - left
+            - right
+            - all

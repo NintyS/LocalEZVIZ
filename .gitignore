@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local PTZ Proxy source materials and generated archives
+.DS_Store
+Wskazania/
+custom_components.zip

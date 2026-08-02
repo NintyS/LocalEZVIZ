@@ -1,0 +1,103 @@
+{
+  "title": "PTZ Proxy",
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Serwer sterowania kamerami",
+        "description": "Skonfiguruj lokalny serwer PTZ.\n\nKod błędu: {error_code}\nStatus HTTP: {status_code}\nSzczegóły: {error_detail}",
+        "data": {
+          "name": "Nazwa serwera",
+          "base_url": "Adres serwera",
+          "api_token": "Token API (opcjonalny)",
+          "verify_ssl": "Sprawdź certyfikat TLS",
+          "request_timeout": "Limit czasu żądania"
+        },
+        "data_description": {
+          "base_url": "Bazowy adres HTTP lub HTTPS. /health zostanie dodane automatycznie.",
+          "api_token": "Opcjonalny token Bearer. Zostanie zapisany dopiero po poprawnym teście health.",
+          "request_timeout": "Limit czasu w sekundach (1–30)."
+        }
+      },
+      "reconfigure": {
+        "title": "Zmień serwer sterowania kamerami",
+        "description": "Pozostaw token pusty, aby zachować dotychczasowy.\n\nKod błędu: {error_code}\nStatus HTTP: {status_code}\nSzczegóły: {error_detail}",
+        "data": {
+          "name": "Nazwa serwera",
+          "base_url": "Adres serwera",
+          "api_token": "Nowy token API (opcjonalny)",
+          "verify_ssl": "Sprawdź certyfikat TLS",
+          "request_timeout": "Limit czasu żądania"
+        }
+      }
+    },
+    "error": {
+      "timeout": "Serwer nie odpowiedział w wymaganym czasie.",
+      "dns_error": "Nie można odnaleźć podanego serwera.",
+      "connection_refused": "Serwer odrzucił połączenie.",
+      "network_unreachable": "Sieć lub serwer są nieosiągalne.",
+      "tls_verification_failed": "Nie udało się zweryfikować certyfikatu TLS.",
+      "invalid_auth": "Serwer odrzucił token API.",
+      "http_error": "Serwer zwrócił błąd HTTP.",
+      "invalid_json": "Serwer zwrócił niepoprawną odpowiedź JSON.",
+      "invalid_health_response": "Endpoint health zwrócił niepoprawny status.",
+      "redirect_error": "Serwer zwrócił niedozwolone przekierowanie.",
+      "invalid_url": "Podaj poprawny adres HTTP lub HTTPS bez danych logowania.",
+      "unknown": "Wystąpił nieoczekiwany błąd."
+    },
+    "abort": {
+      "already_configured": "Ten serwer jest już skonfigurowany.",
+      "reconfigure_successful": "Konfiguracja serwera została zaktualizowana."
+    }
+  },
+  "config_subentries": {
+    "camera": {
+      "title": "Kamera",
+      "step": {
+        "user": {
+          "title": "Dodaj kamerę",
+          "description": "Dane logowania pozostają w backendzie Home Assistanta i są wysyłane wyłącznie do skonfigurowanego serwera PTZ.",
+          "data": {
+            "name": "Nazwa kamery",
+            "camera_ip": "Adres IP lub nazwa hosta kamery",
+            "username": "Nazwa użytkownika",
+            "password": "Hasło",
+            "rtsp_url": "Adres RTSP (przygotowany na etap drugi)"
+          }
+        },
+        "reconfigure": {
+          "title": "Zmień konfigurację kamery",
+          "description": "Pozostaw hasło puste, aby zachować dotychczasowe. RTSP jest przechowywane, ale nieużywane w MVP.",
+          "data": {
+            "name": "Nazwa kamery",
+            "camera_ip": "Adres IP lub nazwa hosta kamery",
+            "username": "Nazwa użytkownika",
+            "password": "Nowe hasło (opcjonalne)",
+            "rtsp_url": "Adres RTSP (przygotowany na etap drugi)"
+          }
+        }
+      },
+      "error": { "required": "To pole jest wymagane." },
+      "abort": { "reconfigure_successful": "Konfiguracja kamery została zaktualizowana." }
+    }
+  },
+  "services": {
+    "move": {
+      "name": "Steruj kamerą",
+      "description": "Rozpocznij albo zatrzymaj ruch PTZ.",
+      "fields": {
+        "action": { "name": "Akcja", "description": "Rozpoczęcie albo zatrzymanie ruchu." },
+        "direction": { "name": "Kierunek", "description": "Kierunek ruchu; wszystkie jest dozwolone tylko dla zatrzymania." }
+      }
+    }
+  },
+  "selector": {
+    "ptz_action": { "options": { "start": "Rozpocznij ruch", "stop": "Zatrzymaj ruch" } },
+    "ptz_direction": { "options": { "up": "Góra", "down": "Dół", "left": "Lewo", "right": "Prawo", "all": "Wszystkie kierunki" } }
+  },
+  "exceptions": {
+    "invalid_movement": { "message": "Akcja lub kierunek są niepoprawne." },
+    "start_all_not_allowed": { "message": "Kierunku wszystkie można użyć tylko z zatrzymaniem." },
+    "ptz_command_failed": { "message": "Polecenie PTZ nie powiodło się (kod: {error_code})." }
+  }
+}

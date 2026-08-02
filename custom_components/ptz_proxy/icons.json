@@ -1,0 +1,7 @@
+{
+  "services": {
+    "move": {
+      "service": "mdi:camera-control"
+    }
+  }
+}

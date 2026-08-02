@@ -1,0 +1,103 @@
+{
+  "title": "PTZ Proxy",
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Camera control server",
+        "description": "Configure the local PTZ server.\n\nError code: {error_code}\nHTTP status: {status_code}\nDetails: {error_detail}",
+        "data": {
+          "name": "Server name",
+          "base_url": "Server address",
+          "api_token": "API token (optional)",
+          "verify_ssl": "Verify TLS certificate",
+          "request_timeout": "Request timeout"
+        },
+        "data_description": {
+          "base_url": "HTTP or HTTPS base address. /health is added automatically.",
+          "api_token": "Optional Bearer token. It is stored only after a successful health check.",
+          "request_timeout": "Timeout in seconds (1–30)."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure camera control server",
+        "description": "Leave the token empty to keep the current token.\n\nError code: {error_code}\nHTTP status: {status_code}\nDetails: {error_detail}",
+        "data": {
+          "name": "Server name",
+          "base_url": "Server address",
+          "api_token": "New API token (optional)",
+          "verify_ssl": "Verify TLS certificate",
+          "request_timeout": "Request timeout"
+        }
+      }
+    },
+    "error": {
+      "timeout": "The server did not respond in time.",
+      "dns_error": "The server name could not be resolved.",
+      "connection_refused": "The server refused the connection.",
+      "network_unreachable": "The network or server is unreachable.",
+      "tls_verification_failed": "The TLS certificate could not be verified.",
+      "invalid_auth": "The server rejected the API token.",
+      "http_error": "The server returned an HTTP error.",
+      "invalid_json": "The server returned invalid JSON.",
+      "invalid_health_response": "The health endpoint returned an invalid status.",
+      "redirect_error": "The server returned a disallowed redirect.",
+      "invalid_url": "Enter a valid HTTP or HTTPS server address without credentials.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This server is already configured.",
+      "reconfigure_successful": "The server configuration was updated."
+    }
+  },
+  "config_subentries": {
+    "camera": {
+      "title": "Camera",
+      "step": {
+        "user": {
+          "title": "Add camera",
+          "description": "Credentials stay in the Home Assistant backend and are sent only to the configured PTZ server.",
+          "data": {
+            "name": "Camera name",
+            "camera_ip": "Camera IP address or host name",
+            "username": "Username",
+            "password": "Password",
+            "rtsp_url": "RTSP URL (reserved for phase two)"
+          }
+        },
+        "reconfigure": {
+          "title": "Reconfigure camera",
+          "description": "Leave password empty to keep the current password. RTSP is stored but not used by this MVP.",
+          "data": {
+            "name": "Camera name",
+            "camera_ip": "Camera IP address or host name",
+            "username": "Username",
+            "password": "New password (optional)",
+            "rtsp_url": "RTSP URL (reserved for phase two)"
+          }
+        }
+      },
+      "error": { "required": "This field is required." },
+      "abort": { "reconfigure_successful": "The camera configuration was updated." }
+    }
+  },
+  "services": {
+    "move": {
+      "name": "Move camera",
+      "description": "Start or stop PTZ movement.",
+      "fields": {
+        "action": { "name": "Action", "description": "Start or stop movement." },
+        "direction": { "name": "Direction", "description": "Movement direction; all is valid only for stop." }
+      }
+    }
+  },
+  "selector": {
+    "ptz_action": { "options": { "start": "Start movement", "stop": "Stop movement" } },
+    "ptz_direction": { "options": { "up": "Up", "down": "Down", "left": "Left", "right": "Right", "all": "All directions" } }
+  },
+  "exceptions": {
+    "invalid_movement": { "message": "The action or direction is invalid." },
+    "start_all_not_allowed": { "message": "Direction all can only be used with stop." },
+    "ptz_command_failed": { "message": "The PTZ command failed (code: {error_code})." }
+  }
+}

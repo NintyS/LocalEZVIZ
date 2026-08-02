@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "home-assistant-ptz-proxy"
+version = "0.1.0"
+description = "PTZ Proxy custom integration for Home Assistant"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "GPL-3.0-only"
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.25",
+  "pytest-cov>=6",
+  "pytest-homeassistant-custom-component>=0.13.300"
+]
+
+[tool.setuptools.packages.find]
+include = ["custom_components*"]
+namespaces = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--strict-markers --strict-config"
+
+[tool.coverage.run]
+branch = true
+source = ["custom_components.ptz_proxy"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "S", "RUF"]
+ignore = ["E501", "S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"custom_components/ptz_proxy/const.py" = ["S105"]
+"tests/*" = ["S105"]
