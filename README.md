@@ -1,6 +1,6 @@
 # PTZ Proxy dla Home Assistant
 
-PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.1.2` jest świadomie małym MVP: obsługuje ruch góra, dół, lewo, prawo oraz awaryjne zatrzymanie. Nie wyświetla jeszcze obrazu RTSP.
+PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.2.0` obsługuje ruch góra, dół, lewo, prawo, awaryjne zatrzymanie oraz standardowy podgląd RTSP Home Assistanta.
 
 ## Co dostajesz
 
@@ -8,6 +8,7 @@ PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nows
 - kontrolę `GET /health` przed zapisaniem konfiguracji;
 - dowolną liczbę kamer jako config subentries;
 - osobną encję `camera` i urządzenie dla każdej kamery;
+- pionową kartę z obrazem kamery nad D-padem;
 - akcję `ptz_proxy.move` z kontrolą uprawnień encji;
 - automatycznie ładowaną kartę `custom:ptz-camera-card`;
 - D-pad działający na myszce, ekranie dotykowym i klawiaturze;
@@ -122,7 +123,7 @@ Adres bez schematu dostanie `http://`. Końcowy ukośnik i przypadkowo podane `/
 
 1. Otwórz utworzony wpis PTZ Proxy.
 2. W sekcji wpisów podrzędnych wybierz dodanie **Kamery**.
-3. Podaj nazwę, adres IP/DNS kamery, username i password. Pole RTSP jest opcjonalne i w tej wersji nie jest używane.
+3. Podaj nazwę, adres IP/DNS kamery, username, password i adres RTSP. RTSP jest opcjonalne dla samego sterowania PTZ, ale wymagane do wyświetlenia obrazu.
 4. Powtórz operację dla następnych kamer.
 
 Każda kamera otrzymuje losowy UUID. Zmiana nazwy lub adresu nie zmienia tożsamości encji. Podczas rekonfiguracji puste pole hasła zachowuje dotychczasowe hasło. Usunięcie camera subentry usuwa tylko tę kamerę, nie serwer.
@@ -135,6 +136,8 @@ Po restarcie karta jest już zarejestrowana. W edytorze dashboardu wybierz **Dod
 type: custom:ptz-camera-card
 entity: camera.kamera_salon
 ```
+
+Karta układa elementy pionowo: najpierw standardowy podgląd `camera` Home Assistanta, a pod nim D-pad. Stream RTSP jest otwierany przez backend i komponent `stream`; adres RTSP oraz jego dane logowania nie trafiają do JavaScriptu.
 
 Sterowanie:
 
@@ -201,7 +204,7 @@ Jeżeli nie widzisz karty, sprawdź log ładowania integracji, zrestartuj HA i w
 
 ## Logi diagnostyczne
 
-Wersja `0.1.2` zapisuje w logach Home Assistanta wersję integracji, żądania HTTP bez payloadu, statusy odpowiedzi, wynik health oraz komendy PTZ. Odpowiedź health pokazuje tylko bezpieczną listę pól: `ok`, `status`, `backend`, `connected_sessions`, `version` i `name`. Tokeny, hasła oraz wartości nieznanych pól nie są logowane.
+Wersja `0.2.0` zapisuje w logach Home Assistanta wersję integracji, żądania HTTP bez payloadu, statusy odpowiedzi, wynik health oraz komendy PTZ. Odpowiedź health pokazuje tylko bezpieczną listę pól: `ok`, `status`, `backend`, `connected_sessions`, `version` i `name`. Tokeny, hasła oraz wartości nieznanych pól nie są logowane.
 
 Aby zobaczyć również wpisy poziomu debug, dodaj do `configuration.yaml`:
 
@@ -211,7 +214,7 @@ logger:
     custom_components.ptz_proxy: debug
 ```
 
-Następnie uruchom HA ponownie i otwórz **Ustawienia → System → Logi**. Karta wypisuje wysłanie, powodzenie i błąd komendy w narzędziach deweloperskich przeglądarki pod prefiksem `[PTZ Proxy 0.1.2]`. Ekran dodawania integracji należy do frontendowego Core HA, dlatego szczegóły jego `/health` są kierowane do formularza i logów HA, a nie do własnego skryptu karty.
+Następnie uruchom HA ponownie i otwórz **Ustawienia → System → Logi**. Karta wypisuje załadowanie obrazu, wysłanie, powodzenie i błąd komendy w narzędziach deweloperskich przeglądarki pod prefiksem `[PTZ Proxy 0.2.0]`. Ekran dodawania integracji należy do frontendowego Core HA, dlatego szczegóły jego `/health` są kierowane do formularza i logów HA, a nie do własnego skryptu karty.
 
 ## Testy deweloperskie
 
@@ -226,6 +229,6 @@ node --test tests/frontend/test_ptz_camera_card.mjs
 
 Hassfest uruchamia workflow `.github/workflows/hassfest.yaml` na GitHubie.
 
-## Plan RTSP
+## Obraz RTSP
 
-Pole `rtsp_url` jest już zachowywane prywatnie, ale wersja `0.1.2` nie ustawia `CameraEntityFeature.STREAM`. Następny etap powinien użyć standardowego `stream_source` Home Assistanta, bez dekodera RTSP w JavaScripcie i bez ujawniania danych logowania. Własny D-pad może wtedy znaleźć się pod standardowym podglądem HA.
+Wersja `0.2.0` ustawia `CameraEntityFeature.STREAM`, a `stream_source` zwraca prywatny adres RTSP wyłącznie backendowi. Standardowa karta obrazu HA jest osadzona nad D-padem. Jeżeli RTSP pozostanie puste, encja PTZ nadal będzie dostępna i będzie sterować kamerą, ale karta nie pokaże obrazu. Adres RTSP musi być osiągalny z hosta Home Assistanta, nie tylko z komputera użytkownika.

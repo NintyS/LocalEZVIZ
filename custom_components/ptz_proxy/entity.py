@@ -19,6 +19,7 @@ class PtzProxyEntity(Entity):
     def __init__(self, entry: PtzProxyConfigEntry, subentry: ConfigSubentry) -> None:
         """PL: Połącz encję z parent entry i camera subentry. EN: Link the entity to its parent entry and camera subentry."""
 
+        super().__init__()
         self._entry = entry
         self._subentry = subentry
         self._camera = CameraConfig.from_subentry(subentry)

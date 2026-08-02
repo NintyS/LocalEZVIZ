@@ -6,7 +6,7 @@
 const CARD_TAG = "ptz-camera-card";
 const EDITOR_TAG = "ptz-camera-card-editor";
 const DIRECTIONS = ["up", "left", "right", "down"];
-const LOG_PREFIX = "[PTZ Proxy 0.1.2]";
+const LOG_PREFIX = "[PTZ Proxy 0.2.0]";
 
 class PtzCameraCard extends HTMLElement {
   /** PL: Utwórz bezpieczny stan karty. EN: Create the card's safe local state. */
@@ -20,6 +20,9 @@ class PtzCameraCard extends HTMLElement {
     this._pending = false;
     this._error = "";
     this._built = false;
+    this._cameraCard = undefined;
+    this._cameraCardEntity = undefined;
+    this._cameraCardLoading = false;
     this._onBlur = () => this._emergencyStop(false);
     this._onVisibility = () => {
       if (document.visibilityState === "hidden") this._emergencyStop(false);
@@ -39,17 +42,19 @@ class PtzCameraCard extends HTMLElement {
     this._config = { entity: config.entity };
     this._build();
     this._updateView();
+    this._ensureCameraCard();
   }
 
   /** PL: Przyjmij aktualny obiekt Home Assistanta. EN: Receive the current Home Assistant object. */
   set hass(value) {
     this._hass = value;
     this._updateView();
+    this._ensureCameraCard();
   }
 
   /** PL: Zwróć przybliżoną wysokość karty. EN: Return the approximate card height. */
   getCardSize() {
-    return 4;
+    return 8;
   }
 
   /** PL: Utwórz graficzny edytor konfiguracji. EN: Create the graphical configuration editor. */
@@ -94,11 +99,18 @@ class PtzCameraCard extends HTMLElement {
       <style>
         :host { display: block; outline: none; }
         ha-card {
-          display: block; padding: 16px; color: var(--primary-text-color);
+          display: block; overflow: hidden; color: var(--primary-text-color);
           background: var(--ha-card-background, var(--card-background-color));
-          user-select: none; -webkit-user-select: none; touch-action: none;
+          user-select: none; -webkit-user-select: none;
         }
-        .title { font-size: 1.15rem; font-weight: 500; margin-bottom: 12px; }
+        .title { font-size: 1.15rem; font-weight: 500; padding: 16px; }
+        .camera { width: 100%; min-height: 180px; background: #000; }
+        .camera > * { display: block; width: 100%; }
+        .preview-message {
+          box-sizing: border-box; display: grid; place-items: center; min-height: 180px;
+          padding: 24px; color: var(--secondary-text-color); text-align: center;
+        }
+        .controls { padding: 12px 16px 16px; touch-action: none; }
         .status { min-height: 20px; color: var(--secondary-text-color); font-size: .9rem; text-align: center; }
         .status.error { color: var(--error-color); }
         .pad { display: grid; grid-template: repeat(3, 56px) / repeat(3, 56px); gap: 8px; justify-content: center; }
@@ -117,13 +129,16 @@ class PtzCameraCard extends HTMLElement {
       </style>
       <ha-card>
         <div class="title"></div>
-        <div class="status" aria-live="polite"></div>
-        <div class="pad" role="group" aria-label="PTZ controls">
-          <button class="up" data-direction="up" aria-label="Move up">▲</button>
-          <button class="left" data-direction="left" aria-label="Move left">◀</button>
-          <button class="stop" aria-label="Emergency stop">STOP</button>
-          <button class="right" data-direction="right" aria-label="Move right">▶</button>
-          <button class="down" data-direction="down" aria-label="Move down">▼</button>
+        <div class="camera"><div class="preview-message">Loading camera preview…</div></div>
+        <div class="controls">
+          <div class="status" aria-live="polite"></div>
+          <div class="pad" role="group" aria-label="PTZ controls">
+            <button class="up" data-direction="up" aria-label="Move up">▲</button>
+            <button class="left" data-direction="left" aria-label="Move left">◀</button>
+            <button class="stop" aria-label="Emergency stop">STOP</button>
+            <button class="right" data-direction="right" aria-label="Move right">▶</button>
+            <button class="down" data-direction="down" aria-label="Move down">▼</button>
+          </div>
         </div>
       </ha-card>`;
 
@@ -137,6 +152,52 @@ class PtzCameraCard extends HTMLElement {
       event.preventDefault();
       this._emergencyStop(true);
     });
+  }
+
+  /** PL: Osadź standardowy podgląd camera HA nad D-padem. EN: Embed HA's standard camera preview above the D-pad. */
+  async _ensureCameraCard() {
+    const entity = this._config?.entity;
+    const container = this.shadowRoot?.querySelector(".camera");
+    if (!entity || !container || !this._hass) return;
+    if (this._cameraCard && this._cameraCardEntity === entity) {
+      this._cameraCard.hass = this._hass;
+      return;
+    }
+    if (this._cameraCardLoading) return;
+
+    this._cameraCardLoading = true;
+    this._cameraCardEntity = entity;
+    try {
+      const helpers = await window.loadCardHelpers();
+      if (this._config?.entity !== entity) return;
+      const cameraCard = helpers.createCardElement({
+        type: "picture-entity",
+        entity,
+        camera_image: entity,
+        camera_view: "live",
+        show_name: false,
+        show_state: false,
+        tap_action: { action: "more-info" },
+      });
+      cameraCard.hass = this._hass;
+      container.replaceChildren(cameraCard);
+      this._cameraCard = cameraCard;
+      console.info(LOG_PREFIX, "Camera preview attached", { entity_id: entity });
+    } catch (error) {
+      const message = this._message("preview");
+      container.replaceChildren();
+      const errorElement = document.createElement("div");
+      errorElement.className = "preview-message";
+      errorElement.textContent = message;
+      container.append(errorElement);
+      console.error(LOG_PREFIX, "Could not attach camera preview", {
+        entity_id: entity,
+        name: error?.name ?? "Error",
+        message: error?.message ?? String(error),
+      });
+    } finally {
+      this._cameraCardLoading = false;
+    }
   }
 
   /** PL: Odśwież tylko bezpieczny tekst i klasy. EN: Update safe text and CSS classes only. */
@@ -158,6 +219,7 @@ class PtzCameraCard extends HTMLElement {
   _message(kind) {
     const polish = (this._hass?.language ?? "en").toLowerCase().startsWith("pl");
     if (kind === "sending") return polish ? "Wysyłanie polecenia…" : "Sending command…";
+    if (kind === "preview") return polish ? "Nie udało się załadować podglądu kamery." : "Could not load the camera preview.";
     return polish ? "Nie udało się wysłać polecenia PTZ." : "Could not send the PTZ command.";
   }
 

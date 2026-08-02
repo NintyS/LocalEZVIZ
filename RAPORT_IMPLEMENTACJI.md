@@ -72,7 +72,7 @@ Znormalizowany `base_url` jest unique ID wpisu. Dzięki temu `host:8080/`, `http
 | `camera_ip` | cel dla serwera PTZ | może się zmienić |
 | `username` | login przekazywany backend → serwer | wymagany |
 | `password` | hasło przekazywane backend → serwer | puste pole zachowuje stare |
-| `rtsp_url` | przygotowanie pod etap drugi | zapisane, ale nieużywane |
+| `rtsp_url` | prywatne źródło obrazu dla komponentu `stream` | może się zmienić; puste wyłącza tylko obraz |
 
 UUID, a nie nazwa ani IP, buduje unique ID encji. Zmiana nazwy, adresu kamery lub hasła nie tworzy nowej encji.
 
@@ -165,12 +165,12 @@ Każdy status 2xx jest sukcesem. 401/403 stają się błędem uwierzytelnienia, 
 
 ## 10. Encja i Device Registry
 
-Każda camera subentry tworzy dokładnie jedną `PtzProxyCamera`. Encja:
+Każda camera subentry tworzy dokładnie jedną `PtzProxyCamera`. Wersja `0.2.0` dodatkowo naprawia pełną inicjalizację klasy bazowej `Camera`, bez której encja mogła zostać oznaczona jako niedostępna. Encja:
 
 - ma `has_entity_name = True`;
 - ma `should_poll = False`;
-- nie ma funkcji STREAM;
-- zwraca `None` dla obrazu i źródła streamu;
+- ma funkcję STREAM, gdy skonfigurowano RTSP;
+- przekazuje RTSP tylko do backendowego komponentu `stream` i tworzy z niego podgląd;
 - posiada stabilny unique ID `parent_entry_id + camera_uuid`;
 - jest przypisana do właściwego config subentry;
 - tworzy urządzenie `Generic / PTZ Proxy Camera`;
@@ -193,6 +193,8 @@ Nie ma osobnej usługi dla każdego serwera i nie ma własnego endpointu HTTP om
 ## 12. Karta frontendowa
 
 Karta jest modułem bez zewnętrznego frameworka. Backend serwuje ją jako statyczny plik i dopisuje jako extra JS module. Nie modyfikuje `.storage/lovelace_resources` i nie wymaga `/config/www`.
+
+Układ jest pionowy: standardowa karta `picture-entity` z `camera_view: live` znajduje się nad D-padem. Dzięki temu obraz jest renderowany mechanizmem Home Assistanta, a JavaScript PTZ nie otrzymuje adresu RTSP ani danych logowania.
 
 ### Maszyna bezpieczeństwa ruchu
 
@@ -281,11 +283,11 @@ Każdy moduł, klasa, dataclass, enum, metoda i funkcja ma docstring albo koment
 | sekrety flow | token nie występuje w placeholders; stary token przetrwa blank reconfigure |
 | subentries | dodanie UUID, rekonfiguracja, zachowanie hasła |
 | PTZ | dokładny JSON, 200, 204, stop/all, odrzucenie start/all, brak retry |
-| encja | unique ID, DeviceInfo, brak obrazu/streamu, prywatny CameraConfig |
+| encja | unique ID, DeviceInfo, inicjalizacja Camera, RTSP/STREAM, tryb bez RTSP, prywatny CameraConfig |
 | diagnostyka | brak tokenu, hasła, username i RTSP |
 | frontend | obecność pointer safety, blur/visibility, keyboard repeat i logów konsoli; brak sekretów i fetch |
 
-Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Home Assistant `2026.8.0b3`, czyli wersji nowszej od minimalnej `2026.7`. Wynik: **53 testy zaliczone, 0 błędów**. Niezależnie wykonano kompilację wszystkich modułów Python, lint i formatowanie Ruff, walidację wszystkich plików JSON i YAML, kontrolę parytetu kluczy tłumaczeń, kontrolę składni JavaScriptu, test kontraktu karty oraz audyt dwujęzycznych docstringów.
+Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Home Assistant `2026.8.0b3`, czyli wersji nowszej od minimalnej `2026.7`. Wynik: **54 testy zaliczone, 0 błędów**. Niezależnie wykonano kompilację wszystkich modułów Python, lint i formatowanie Ruff, walidację wszystkich plików JSON i YAML, kontrolę parytetu kluczy tłumaczeń, kontrolę składni JavaScriptu, test kontraktu karty oraz audyt dwujęzycznych docstringów.
 
 ## 18. Kryteria ukończenia
 
@@ -305,14 +307,14 @@ Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Ho
 | reload/unload | gotowe | update listener + platform unload |
 | PL/EN | gotowe | strings i translations |
 | ręczna instalacja/HACS | gotowe | README + hacs.json |
-| RTSP | celowo poza MVP | pole zachowane, brak STREAM |
+| RTSP i obraz nad D-padem | gotowe | `stream_source`, STREAM i osadzona `picture-entity` |
 
 ## 19. Znane ograniczenia MVP
 
-1. Brak obrazu, snapshotów i streamu RTSP.
+1. Obraz wymaga poprawnego RTSP osiągalnego z hosta HA; nie ma osobnego endpointu snapshot kamery.
 2. Brak zoomu, focusu, presetów, patrolu i kierunków diagonalnych.
 3. Brak automatycznego wykrywania kamer.
-4. Brak bezpośredniej komunikacji z kamerą — wymagany jest zgodny serwer PTZ.
+4. Sterowanie nie komunikuje się bezpośrednio z kamerą — wymagany jest zgodny serwer PTZ.
 5. Komunikaty techniczne w placeholders są kontrolowane i obecnie angielskie; przyjazna warstwa błędu jest tłumaczona przez HA.
 6. Watchdog ruchu musi być zaimplementowany po stronie serwera.
 

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.camera import Camera
+from homeassistant.components.camera import Camera, CameraEntityFeature
+from homeassistant.config_entries import ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -34,22 +35,35 @@ async def async_setup_entry(
 
 
 class PtzProxyCamera(PtzProxyEntity, Camera):
-    """PL: Kamera bez obrazu, udostępniająca bezpieczne PTZ. EN: Image-less camera exposing secure PTZ control."""
+    """PL: Kamera RTSP z bezpiecznym sterowaniem PTZ. EN: RTSP camera with secure PTZ control."""
 
     _attr_name = None
-    _attr_supported_features = 0
+
+    def __init__(self, entry: PtzProxyConfigEntry, subentry: ConfigSubentry) -> None:
+        """PL: Zainicjalizuj bazę Camera i włącz stream, gdy podano RTSP. EN: Initialize the Camera base and enable streaming when RTSP is configured."""
+
+        super().__init__(entry, subentry)
+        self._attr_supported_features = (
+            CameraEntityFeature.STREAM if self._camera.rtsp_url else CameraEntityFeature(0)
+        )
+
+    @property
+    def use_stream_for_stills(self) -> bool:
+        """PL: Twórz podgląd statyczny ze streamu RTSP. EN: Generate still previews from the RTSP stream."""
+
+        return bool(self._camera.rtsp_url)
 
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ) -> bytes | None:
-        """PL: MVP nie dostarcza obrazu. EN: The MVP does not provide an image."""
+        """PL: Bez RTSP nie istnieje osobny endpoint snapshotu. EN: Without RTSP there is no separate snapshot endpoint."""
 
         return None
 
     async def stream_source(self) -> str | None:
-        """PL: RTSP jest zachowane na etap drugi, więc brak streamu. EN: RTSP is reserved for phase two, so no stream is exposed."""
+        """PL: Zwróć prywatny adres RTSP wyłącznie backendowi HA. EN: Return the private RTSP URL only to the HA backend."""
 
-        return None
+        return self._camera.rtsp_url or None
 
     async def async_ptz_move(self, action: PtzAction | str, direction: PtzDirection | str) -> None:
         """PL: Zweryfikuj i wykonaj komendę PTZ dla tej encji. EN: Validate and execute a PTZ command for this entity."""

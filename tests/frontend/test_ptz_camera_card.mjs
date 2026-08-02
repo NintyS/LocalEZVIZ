@@ -21,6 +21,9 @@ for (const required of [
   "setPointerCapture",
   "console.info",
   "console.error",
+  "loadCardHelpers",
+  'type: "picture-entity"',
+  'camera_view: "live"',
 ]) {
   assert.ok(source.includes(required), `Missing frontend safety mechanism: ${required}`);
 }
