@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,8 @@ from .const import (
 )
 from .models import PtzAction, PtzDirection, PtzProxyConfigEntry, PtzProxyRuntimeData
 
+_LOGGER = logging.getLogger(__name__)
+
 # PL: Schemat danych usługi; target encji dodaje helper Home Assistanta.
 # EN: Service data schema; Home Assistant's helper adds the entity target.
 MOVE_SERVICE_SCHEMA = {
@@ -40,6 +43,7 @@ MOVE_SERVICE_SCHEMA = {
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     """PL: Jednorazowo zarejestruj akcję i kartę. EN: Register the action and card exactly once."""
 
+    _LOGGER.info("Loading PTZ Proxy integration version %s", VERSION)
     async_register_platform_entity_service(
         hass,
         DOMAIN,

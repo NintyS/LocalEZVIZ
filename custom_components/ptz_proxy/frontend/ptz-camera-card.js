@@ -6,6 +6,7 @@
 const CARD_TAG = "ptz-camera-card";
 const EDITOR_TAG = "ptz-camera-card-editor";
 const DIRECTIONS = ["up", "left", "right", "down"];
+const LOG_PREFIX = "[PTZ Proxy 0.1.2]";
 
 class PtzCameraCard extends HTMLElement {
   /** PL: Utwórz bezpieczny stan karty. EN: Create the card's safe local state. */
@@ -163,11 +164,22 @@ class PtzCameraCard extends HTMLElement {
   /** PL: Wyślij usługę wyłącznie z entity_id, action i direction. EN: Call the service with entity_id, action, and direction only. */
   async _callMove(action, direction) {
     if (!this._hass || !this._config?.entity) throw new Error("Card is not ready");
-    await this._hass.callService("ptz_proxy", "move", {
+    const command = {
       entity_id: this._config.entity,
       action,
       direction,
-    });
+    };
+    console.info(LOG_PREFIX, "Sending command", command);
+    try {
+      await this._hass.callService("ptz_proxy", "move", command);
+      console.info(LOG_PREFIX, "Command succeeded", command);
+    } catch (error) {
+      console.error(LOG_PREFIX, "Command failed", command, {
+        name: error?.name ?? "Error",
+        message: error?.message ?? String(error),
+      });
+      throw error;
+    }
   }
 
   /** PL: Rozpocznij jeden ruch po pointerdown. EN: Start one movement on pointerdown. */
@@ -306,7 +318,11 @@ class PtzCameraCardEditor extends HTMLElement {
             .sort();
           this._render();
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error(LOG_PREFIX, "Could not load the entity registry", {
+            name: error?.name ?? "Error",
+            message: error?.message ?? String(error),
+          });
           this._entities = [];
           this._render();
         });

@@ -19,6 +19,8 @@ for (const required of [
   '"stop", "all"',
   "event.repeat",
   "setPointerCapture",
+  "console.info",
+  "console.error",
 ]) {
   assert.ok(source.includes(required), `Missing frontend safety mechanism: ${required}`);
 }

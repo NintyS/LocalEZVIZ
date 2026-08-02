@@ -218,7 +218,7 @@ Edytor pobiera entity registry i filtruje wyłącznie encje `camera` z platform�
 | Ryzyko | Zabezpieczenie |
 |---|---|
 | hasło w JavaScripcie | frontend wysyła tylko trzy jawne pola sterujące |
-| token w logu | logowane są stałe kody, host/port i status |
+| token w logu | logowane są stałe kody, host/port, status i wyłącznie dozwolone pola health; reszta jest pomijana |
 | sekret w wyjątku aiohttp | wyjątek jest mapowany na `ErrorDetails`; brak `str(exception)` |
 | sekret w URL | zakaz userinfo, query i fragmentu |
 | sekret w stanie encji | brak prywatnych extra state attributes |
@@ -283,9 +283,9 @@ Każdy moduł, klasa, dataclass, enum, metoda i funkcja ma docstring albo koment
 | PTZ | dokładny JSON, 200, 204, stop/all, odrzucenie start/all, brak retry |
 | encja | unique ID, DeviceInfo, brak obrazu/streamu, prywatny CameraConfig |
 | diagnostyka | brak tokenu, hasła, username i RTSP |
-| frontend | obecność pointer safety, blur/visibility, keyboard repeat; brak sekretów i fetch |
+| frontend | obecność pointer safety, blur/visibility, keyboard repeat i logów konsoli; brak sekretów i fetch |
 
-Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Home Assistant `2026.8.0b3`, czyli wersji nowszej od minimalnej `2026.7`. Wynik: **52 testy zaliczone, 0 błędów**. Niezależnie wykonano kompilację wszystkich modułów Python, lint i formatowanie Ruff, walidację wszystkich plików JSON i YAML, kontrolę parytetu kluczy tłumaczeń, kontrolę składni JavaScriptu, test kontraktu karty oraz audyt dwujęzycznych docstringów.
+Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Home Assistant `2026.8.0b3`, czyli wersji nowszej od minimalnej `2026.7`. Wynik: **53 testy zaliczone, 0 błędów**. Niezależnie wykonano kompilację wszystkich modułów Python, lint i formatowanie Ruff, walidację wszystkich plików JSON i YAML, kontrolę parytetu kluczy tłumaczeń, kontrolę składni JavaScriptu, test kontraktu karty oraz audyt dwujęzycznych docstringów.
 
 ## 18. Kryteria ukończenia
 

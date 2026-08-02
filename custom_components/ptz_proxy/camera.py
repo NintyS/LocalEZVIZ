@@ -10,7 +10,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api import PtzProxyError, get_safe_error_details
-from .const import DOMAIN, SUBENTRY_TYPE_CAMERA
+from .const import DOMAIN, SUBENTRY_TYPE_CAMERA, VERSION
 from .entity import PtzProxyEntity
 from .models import PtzAction, PtzDirection, PtzProxyConfigEntry
 
@@ -68,6 +68,13 @@ class PtzProxyCamera(PtzProxyEntity, Camera):
                 translation_key="start_all_not_allowed",
             )
 
+        _LOGGER.info(
+            "PTZ Proxy %s command: camera=%s action=%s direction=%s",
+            VERSION,
+            self._camera.name,
+            parsed_action.value,
+            parsed_direction.value,
+        )
         try:
             await self._entry.runtime_data.client.async_move(
                 self._camera, parsed_action, parsed_direction
@@ -85,3 +92,10 @@ class PtzProxyCamera(PtzProxyEntity, Camera):
                 translation_key="ptz_command_failed",
                 translation_placeholders={"error_code": details.error_code},
             ) from err
+        _LOGGER.info(
+            "PTZ Proxy %s command succeeded: camera=%s action=%s direction=%s",
+            VERSION,
+            self._camera.name,
+            parsed_action.value,
+            parsed_direction.value,
+        )

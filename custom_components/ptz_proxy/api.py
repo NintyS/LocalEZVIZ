@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import errno
 import json
+import logging
 import socket
 import ssl
 from http import HTTPStatus
@@ -21,8 +22,14 @@ from aiohttp import (
     ClientTimeout,
 )
 
-from .const import HEALTH_PATH, PTZ_PATH
+from .const import HEALTH_PATH, PTZ_PATH, VERSION
 from .models import CameraConfig, ErrorDetails, HealthResponse, PtzAction, PtzDirection
+
+_LOGGER = logging.getLogger(__name__)
+
+# PL: Do logów trafiają tylko jawnie dozwolone, niepoufne pola odpowiedzi health.
+# EN: Only explicitly allowed, non-confidential health response fields are logged.
+_SAFE_HEALTH_LOG_FIELDS = ("ok", "status", "backend", "connected_sessions", "version", "name")
 
 
 class PtzProxyError(Exception):
@@ -116,6 +123,25 @@ def _safe_http_detail(status: int) -> str:
     return f"HTTP {status}: {phrase}."
 
 
+def _safe_health_payload_summary(payload: Any) -> str:
+    """PL: Streść odpowiedź health bez ujawniania nieznanych pól. EN: Summarize a health response without exposing unknown fields."""
+
+    if not isinstance(payload, dict):
+        return f"JSON type={type(payload).__name__}"
+
+    summary: dict[str, str | int | float | bool | None] = {}
+    for field in _SAFE_HEALTH_LOG_FIELDS:
+        value = payload.get(field)
+        if field not in payload or not isinstance(value, (str, int, float, bool, type(None))):
+            continue
+        summary[field] = value[:160] if isinstance(value, str) else value
+
+    other_fields_count = len(set(payload) - set(_SAFE_HEALTH_LOG_FIELDS))
+    if other_fields_count:
+        summary["other_fields_count"] = other_fields_count
+    return json.dumps(summary, ensure_ascii=False, sort_keys=True)
+
+
 def get_safe_error_details(exception: Exception) -> ErrorDetails:
     """PL: Zamień wyjątek na bezpieczny opis bez sekretów. EN: Convert an exception into secret-free safe details."""
 
@@ -186,10 +212,17 @@ class PtzProxyClient:
         """PL: Wykonaj jedno żądanie i sklasyfikuj błędy transportu. EN: Perform one request and classify transport failures."""
 
         host, port = _safe_host_port(self._base_url)
+        endpoint = f"{self._base_url}{path}"
+        _LOGGER.debug(
+            "PTZ Proxy %s request: method=%s endpoint=%s",
+            VERSION,
+            method,
+            endpoint,
+        )
         try:
             response = await self._session.request(
                 method,
-                f"{self._base_url}{path}",
+                endpoint,
                 headers=self._headers(json_body="json" in kwargs),
                 timeout=self._timeout,
                 ssl=self._verify_ssl,
@@ -254,6 +287,13 @@ class PtzProxyClient:
                 )
             raise PtzProxyConnectionError(details) from err
 
+        _LOGGER.debug(
+            "PTZ Proxy %s response: method=%s endpoint=%s status=%s",
+            VERSION,
+            method,
+            endpoint,
+            response.status,
+        )
         if 300 <= response.status < 400:
             response.release()
             raise PtzProxyRedirectError(
@@ -298,6 +338,15 @@ class PtzProxyClient:
             try:
                 payload = await response.json(content_type=None)
             except (json.JSONDecodeError, ValueError, TypeError) as err:
+                _LOGGER.warning(
+                    "PTZ Proxy %s health returned invalid JSON: endpoint=%s status=%s "
+                    "content_type=%s content_length=%s",
+                    VERSION,
+                    f"{self._base_url}{HEALTH_PATH}",
+                    response.status,
+                    response.content_type,
+                    getattr(response, "content_length", None) or "unknown",
+                )
                 raise PtzProxyInvalidResponseError(
                     ErrorDetails(
                         "invalid_json",
@@ -305,21 +354,29 @@ class PtzProxyClient:
                         "The response is not a valid JSON document.",
                     )
                 ) from err
+            safe_summary = _safe_health_payload_summary(payload)
+            _LOGGER.info(
+                "PTZ Proxy %s health response: endpoint=%s status=%s payload=%s",
+                VERSION,
+                f"{self._base_url}{HEALTH_PATH}",
+                response.status,
+                safe_summary,
+            )
             if not isinstance(payload, dict):
                 raise PtzProxyInvalidResponseError(
                     ErrorDetails(
                         "invalid_health_response",
                         "invalid_health_response",
-                        "The health response must be a JSON object.",
+                        f"The health response must be a JSON object. Received: {safe_summary}.",
                     )
                 )
             status_is_ok = payload.get("status") == "ok"
             boolean_is_ok = payload.get("ok") is True
             if not status_is_ok and not boolean_is_ok:
                 detail = (
-                    "The health response must contain status='ok' or ok=true."
+                    f"The health response must contain status='ok' or ok=true. Received: {safe_summary}."
                     if "status" not in payload and "ok" not in payload
-                    else "The health response reports that the backend is not ready."
+                    else f"The health response reports that the backend is not ready. Received: {safe_summary}."
                 )
                 raise PtzProxyInvalidResponseError(
                     ErrorDetails("invalid_health_response", "invalid_health_response", detail)

@@ -44,6 +44,7 @@ from .const import (
     MAX_REQUEST_TIMEOUT,
     MIN_REQUEST_TIMEOUT,
     SUBENTRY_TYPE_CAMERA,
+    VERSION,
 )
 from .models import ErrorDetails
 
@@ -158,18 +159,22 @@ def _log_health_error(name: str, base_url: str, details: ErrorDetails) -> None:
         target = f"{target}:{parsed.port}"
     if details.http_status is None:
         _LOGGER.warning(
-            "Health check failed for PTZ server %s (%s): error=%s",
+            "PTZ Proxy %s health check failed for server %s (%s): error=%s detail=%s",
+            VERSION,
             name,
             target,
             details.error_code,
+            details.detail,
         )
     else:
         _LOGGER.warning(
-            "Health check failed for PTZ server %s (%s): error=%s status=%s",
+            "PTZ Proxy %s health check failed for server %s (%s): error=%s status=%s detail=%s",
+            VERSION,
             name,
             target,
             details.error_code,
             details.http_status,
+            details.detail,
         )
 
 
@@ -190,6 +195,11 @@ async def _async_validate_server(flow: ConfigFlow, data: dict[str, Any]) -> Erro
     except Exception as err:
         details = get_safe_error_details(err)
     else:
+        _LOGGER.info(
+            "PTZ Proxy %s health check succeeded for server %s",
+            VERSION,
+            data[CONF_NAME],
+        )
         return None
     _log_health_error(data[CONF_NAME], data[CONF_BASE_URL], details)
     return details

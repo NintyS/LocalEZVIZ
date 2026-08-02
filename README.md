@@ -1,6 +1,6 @@
 # PTZ Proxy dla Home Assistant
 
-PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.1.1` jest świadomie małym MVP: obsługuje ruch góra, dół, lewo, prawo oraz awaryjne zatrzymanie. Nie wyświetla jeszcze obrazu RTSP.
+PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.1.2` jest świadomie małym MVP: obsługuje ruch góra, dół, lewo, prawo oraz awaryjne zatrzymanie. Nie wyświetla jeszcze obrazu RTSP.
 
 ## Co dostajesz
 
@@ -199,6 +199,20 @@ Jeżeli automatyzacja wysyła `start`, zawsze zaplanuj odpowiadający `stop`. Ko
 
 Jeżeli nie widzisz karty, sprawdź log ładowania integracji, zrestartuj HA i wykonaj twarde odświeżenie przeglądarki. Nie dodawaj ręcznie `/ptz_proxy_static/ptz-camera-card.js` do zasobów.
 
+## Logi diagnostyczne
+
+Wersja `0.1.2` zapisuje w logach Home Assistanta wersję integracji, żądania HTTP bez payloadu, statusy odpowiedzi, wynik health oraz komendy PTZ. Odpowiedź health pokazuje tylko bezpieczną listę pól: `ok`, `status`, `backend`, `connected_sessions`, `version` i `name`. Tokeny, hasła oraz wartości nieznanych pól nie są logowane.
+
+Aby zobaczyć również wpisy poziomu debug, dodaj do `configuration.yaml`:
+
+```yaml
+logger:
+  logs:
+    custom_components.ptz_proxy: debug
+```
+
+Następnie uruchom HA ponownie i otwórz **Ustawienia → System → Logi**. Karta wypisuje wysłanie, powodzenie i błąd komendy w narzędziach deweloperskich przeglądarki pod prefiksem `[PTZ Proxy 0.1.2]`. Ekran dodawania integracji należy do frontendowego Core HA, dlatego szczegóły jego `/health` są kierowane do formularza i logów HA, a nie do własnego skryptu karty.
+
 ## Testy deweloperskie
 
 ```bash
@@ -214,4 +228,4 @@ Hassfest uruchamia workflow `.github/workflows/hassfest.yaml` na GitHubie.
 
 ## Plan RTSP
 
-Pole `rtsp_url` jest już zachowywane prywatnie, ale wersja `0.1.1` nie ustawia `CameraEntityFeature.STREAM`. Następny etap powinien użyć standardowego `stream_source` Home Assistanta, bez dekodera RTSP w JavaScripcie i bez ujawniania danych logowania. Własny D-pad może wtedy znaleźć się pod standardowym podglądem HA.
+Pole `rtsp_url` jest już zachowywane prywatnie, ale wersja `0.1.2` nie ustawia `CameraEntityFeature.STREAM`. Następny etap powinien użyć standardowego `stream_source` Home Assistanta, bez dekodera RTSP w JavaScripcie i bez ujawniania danych logowania. Własny D-pad może wtedy znaleźć się pod standardowym podglądem HA.

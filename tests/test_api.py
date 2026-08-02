@@ -13,6 +13,7 @@ from custom_components.ptz_proxy.api import (
     PtzProxyClient,
     PtzProxyHttpError,
     PtzProxyInvalidResponseError,
+    _safe_health_payload_summary,
     normalize_base_url,
 )
 from custom_components.ptz_proxy.models import CameraConfig, PtzAction, PtzDirection
@@ -48,6 +49,28 @@ def test_normalize_base_url_rejects_unsafe_values(raw: str) -> None:
 
     with pytest.raises(ValueError):
         normalize_base_url(raw)
+
+
+def test_health_log_summary_redacts_unknown_fields() -> None:
+    """PL: Log health pokazuje HCNet, ale ukrywa sekrety. EN: The health log shows HCNet data while hiding secrets."""
+
+    summary = _safe_health_payload_summary(
+        {
+            "ok": True,
+            "backend": "hcnet",
+            "connected_sessions": 0,
+            "api_token": "top-secret",
+            "password": "camera-secret",
+        }
+    )
+
+    assert '"backend": "hcnet"' in summary
+    assert '"connected_sessions": 0' in summary
+    assert '"other_fields_count": 2' in summary
+    assert "top-secret" not in summary
+    assert "camera-secret" not in summary
+    assert "api_token" not in summary
+    assert "password" not in summary
 
 
 async def test_health_success(hass: HomeAssistant, aioclient_mock) -> None:
