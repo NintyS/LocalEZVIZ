@@ -6,7 +6,7 @@
 const CARD_TAG = "ptz-camera-card";
 const EDITOR_TAG = "ptz-camera-card-editor";
 const DIRECTIONS = ["up", "left", "right", "down"];
-const LOG_PREFIX = "[PTZ Proxy 0.2.0]";
+const LOG_PREFIX = "[PTZ Proxy 0.2.1]";
 
 class PtzCameraCard extends HTMLElement {
   /** PL: Utwórz bezpieczny stan karty. EN: Create the card's safe local state. */

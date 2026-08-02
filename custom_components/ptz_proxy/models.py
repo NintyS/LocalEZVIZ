@@ -73,9 +73,9 @@ class CameraConfig:
         """PL: Zbuduj poufny payload żądania PTZ. EN: Build the confidential PTZ request payload."""
 
         return {
-            CONF_CAMERA_IP: self.camera_ip,
-            CONF_USERNAME: self.username,
-            CONF_PASSWORD: self.password,
+            "ip": self.camera_ip,
+            "login": self.username,
+            "password": self.password,
             "action": action.value,
             "direction": direction.value,
         }

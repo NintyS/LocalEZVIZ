@@ -30,7 +30,7 @@ sequenceDiagram
     Card->>HA: ptz_proxy.move(entity_id, start, left)
     HA->>HA: sprawdzenie uprawnień i encji
     HA->>Client: async_move(prywatny CameraConfig)
-    Client->>Server: POST /api/v1/ptz + credentials
+    Client->>Server: POST /ptz + ip/login/password
     Server->>Camera: protokół urządzenia
     User->>Card: pointerup
     Card->>HA: ptz_proxy.move(entity_id, stop, left)
@@ -327,7 +327,7 @@ Ograniczenia są zamierzone i nie są atrapami. Wszystkie funkcje należące do 
 3. Uruchom kontrolę JS podaną w README.
 4. Uruchom Hassfest przez workflow lub w checkout Home Assistant Core.
 5. Skopiuj integrację do testowej instancji HA 2026.7+.
-6. Skonfiguruj mock/realny serwer z `/health` i `/api/v1/ptz`.
+6. Skonfiguruj mock/realny serwer z `/health` i `/ptz`.
 7. W DevTools potwierdź, że wywołanie z karty zawiera tylko `entity_id`, `action`, `direction`.
 8. Pobierz diagnostykę i wyszukaj token, hasło oraz fragment RTSP — nie mogą wystąpić.
 9. Wykonaj manualną macierz pointer/keyboard z README.

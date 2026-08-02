@@ -10,7 +10,7 @@ from homeassistant.const import Platform
 # EN: Integration identity and frontend asset version.
 DOMAIN: Final = "ptz_proxy"
 INTEGRATION_NAME: Final = "PTZ Proxy"
-VERSION: Final = "0.2.0"
+VERSION: Final = "0.2.1"
 PLATFORMS: Final = (Platform.CAMERA,)
 
 # PL: Klucze danych serwera zapisywane w głównym config entry.
@@ -42,5 +42,5 @@ ATTR_DIRECTION: Final = "direction"
 # PL: Ścieżki API serwera PTZ oraz automatycznie ładowanego modułu karty.
 # EN: PTZ server API paths and the automatically loaded card module path.
 HEALTH_PATH: Final = "/health"
-PTZ_PATH: Final = "/api/v1/ptz"
+PTZ_PATH: Final = "/ptz"
 FRONTEND_URL: Final = "/ptz_proxy_static/ptz-camera-card.js"

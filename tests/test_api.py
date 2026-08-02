@@ -155,7 +155,7 @@ async def test_move_exact_payload(
 ) -> None:
     """PL: Ruch wysyła jeden dokładny POST. EN: Movement sends one exact POST request."""
 
-    aioclient_mock.post("http://ptz.lan/api/v1/ptz", status=status)
+    aioclient_mock.post("http://ptz.lan/ptz", status=status)
     camera = CameraConfig("id", "Salon", "192.168.1.50", "admin", "secret")
     client = PtzProxyClient(async_get_clientsession(hass), "http://ptz.lan", "", True, 3)
 
@@ -163,8 +163,8 @@ async def test_move_exact_payload(
 
     assert len(aioclient_mock.mock_calls) == 1
     assert aioclient_mock.mock_calls[0][2] == {
-        "camera_ip": "192.168.1.50",
-        "username": "admin",
+        "ip": "192.168.1.50",
+        "login": "admin",
         "password": "secret",
         "action": action.value,
         "direction": direction.value,

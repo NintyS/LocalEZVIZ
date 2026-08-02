@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "home-assistant-ptz-proxy"
-version = "0.2.0"
+version = "0.2.1"
 description = "PTZ Proxy custom integration for Home Assistant"
 readme = "README.md"
 requires-python = ">=3.13"

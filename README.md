@@ -1,6 +1,6 @@
 # PTZ Proxy dla Home Assistant
 
-PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.2.0` obsługuje ruch góra, dół, lewo, prawo, awaryjne zatrzymanie oraz standardowy podgląd RTSP Home Assistanta.
+PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.2.1` obsługuje ruch góra, dół, lewo, prawo, awaryjne zatrzymanie oraz standardowy podgląd RTSP Home Assistanta.
 
 ## Co dostajesz
 
@@ -60,7 +60,7 @@ Odpowiedź może zawierać dodatkowe pola. Przekierowania, inny status HTTP, nie
 ### Sterowanie PTZ
 
 ```http
-POST {base_url}/api/v1/ptz
+POST {base_url}/ptz
 Content-Type: application/json
 Accept: application/json
 ```
@@ -69,8 +69,8 @@ Przykładowy start:
 
 ```json
 {
-  "camera_ip": "192.168.1.50",
-  "username": "admin",
+  "ip": "192.168.1.50",
+  "login": "admin",
   "password": "tajne_haslo",
   "action": "start",
   "direction": "left"
@@ -204,7 +204,7 @@ Jeżeli nie widzisz karty, sprawdź log ładowania integracji, zrestartuj HA i w
 
 ## Logi diagnostyczne
 
-Wersja `0.2.0` zapisuje w logach Home Assistanta wersję integracji, żądania HTTP bez payloadu, statusy odpowiedzi, wynik health oraz komendy PTZ. Odpowiedź health pokazuje tylko bezpieczną listę pól: `ok`, `status`, `backend`, `connected_sessions`, `version` i `name`. Tokeny, hasła oraz wartości nieznanych pól nie są logowane.
+Wersja `0.2.1` zapisuje w logach Home Assistanta wersję integracji, żądania HTTP bez payloadu, statusy odpowiedzi, wynik health oraz komendy PTZ. Odpowiedź health pokazuje tylko bezpieczną listę pól: `ok`, `status`, `backend`, `connected_sessions`, `version` i `name`. Tokeny, hasła oraz wartości nieznanych pól nie są logowane.
 
 Aby zobaczyć również wpisy poziomu debug, dodaj do `configuration.yaml`:
 
@@ -214,7 +214,7 @@ logger:
     custom_components.ptz_proxy: debug
 ```
 
-Następnie uruchom HA ponownie i otwórz **Ustawienia → System → Logi**. Karta wypisuje załadowanie obrazu, wysłanie, powodzenie i błąd komendy w narzędziach deweloperskich przeglądarki pod prefiksem `[PTZ Proxy 0.2.0]`. Ekran dodawania integracji należy do frontendowego Core HA, dlatego szczegóły jego `/health` są kierowane do formularza i logów HA, a nie do własnego skryptu karty.
+Następnie uruchom HA ponownie i otwórz **Ustawienia → System → Logi**. Karta wypisuje załadowanie obrazu, wysłanie, powodzenie i błąd komendy w narzędziach deweloperskich przeglądarki pod prefiksem `[PTZ Proxy 0.2.1]`. Ekran dodawania integracji należy do frontendowego Core HA, dlatego szczegóły jego `/health` są kierowane do formularza i logów HA, a nie do własnego skryptu karty.
 
 ## Testy deweloperskie
 
@@ -231,4 +231,4 @@ Hassfest uruchamia workflow `.github/workflows/hassfest.yaml` na GitHubie.
 
 ## Obraz RTSP
 
-Wersja `0.2.0` ustawia `CameraEntityFeature.STREAM`, a `stream_source` zwraca prywatny adres RTSP wyłącznie backendowi. Standardowa karta obrazu HA jest osadzona nad D-padem. Jeżeli RTSP pozostanie puste, encja PTZ nadal będzie dostępna i będzie sterować kamerą, ale karta nie pokaże obrazu. Adres RTSP musi być osiągalny z hosta Home Assistanta, nie tylko z komputera użytkownika.
+Wersja `0.2.1` ustawia `CameraEntityFeature.STREAM`, a `stream_source` zwraca prywatny adres RTSP wyłącznie backendowi. Standardowa karta obrazu HA jest osadzona nad D-padem. Jeżeli RTSP pozostanie puste, encja PTZ nadal będzie dostępna i będzie sterować kamerą, ale karta nie pokaże obrazu. Adres RTSP musi być osiągalny z hosta Home Assistanta, nie tylko z komputera użytkownika.
