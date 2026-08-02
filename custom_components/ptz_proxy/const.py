@@ -10,7 +10,7 @@ from homeassistant.const import Platform
 # EN: Integration identity and frontend asset version.
 DOMAIN: Final = "ptz_proxy"
 INTEGRATION_NAME: Final = "PTZ Proxy"
-VERSION: Final = "0.2.1"
+VERSION: Final = "0.3.0"
 PLATFORMS: Final = (Platform.CAMERA,)
 
 # PL: Klucze danych serwera zapisywane w głównym config entry.

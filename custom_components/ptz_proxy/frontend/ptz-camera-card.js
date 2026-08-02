@@ -1,12 +1,12 @@
 /*
- * PL: Samodzielna karta D-pad PTZ bez dostępu do sekretów.
- * EN: Standalone PTZ D-pad card with no access to secrets.
+ * PL: Samodzielna karta kołowego D-pada PTZ i zoomu bez dostępu do sekretów.
+ * EN: Standalone circular PTZ D-pad and zoom card with no access to secrets.
  */
 
 const CARD_TAG = "ptz-camera-card";
 const EDITOR_TAG = "ptz-camera-card-editor";
-const DIRECTIONS = ["up", "left", "right", "down"];
-const LOG_PREFIX = "[PTZ Proxy 0.2.1]";
+const DIRECTIONS = ["up", "left", "right", "down", "zoom_in", "zoom_out"];
+const LOG_PREFIX = "[PTZ Proxy 0.3.0]";
 
 class PtzCameraCard extends HTMLElement {
   /** PL: Utwórz bezpieczny stan karty. EN: Create the card's safe local state. */
@@ -20,9 +20,6 @@ class PtzCameraCard extends HTMLElement {
     this._pending = false;
     this._error = "";
     this._built = false;
-    this._cameraCard = undefined;
-    this._cameraCardEntity = undefined;
-    this._cameraCardLoading = false;
     this._onBlur = () => this._emergencyStop(false);
     this._onVisibility = () => {
       if (document.visibilityState === "hidden") this._emergencyStop(false);
@@ -42,19 +39,17 @@ class PtzCameraCard extends HTMLElement {
     this._config = { entity: config.entity };
     this._build();
     this._updateView();
-    this._ensureCameraCard();
   }
 
   /** PL: Przyjmij aktualny obiekt Home Assistanta. EN: Receive the current Home Assistant object. */
   set hass(value) {
     this._hass = value;
     this._updateView();
-    this._ensureCameraCard();
   }
 
   /** PL: Zwróć przybliżoną wysokość karty. EN: Return the approximate card height. */
   getCardSize() {
-    return 8;
+    return 5;
   }
 
   /** PL: Utwórz graficzny edytor konfiguracji. EN: Create the graphical configuration editor. */
@@ -104,40 +99,67 @@ class PtzCameraCard extends HTMLElement {
           user-select: none; -webkit-user-select: none;
         }
         .title { font-size: 1.15rem; font-weight: 500; padding: 16px; }
-        .camera { width: 100%; min-height: 180px; background: #000; }
-        .camera > * { display: block; width: 100%; }
-        .preview-message {
-          box-sizing: border-box; display: grid; place-items: center; min-height: 180px;
-          padding: 24px; color: var(--secondary-text-color); text-align: center;
-        }
-        .controls { padding: 12px 16px 16px; touch-action: none; }
+        .controls { padding: 4px 16px 20px; touch-action: none; }
         .status { min-height: 20px; color: var(--secondary-text-color); font-size: .9rem; text-align: center; }
         .status.error { color: var(--error-color); }
-        .pad { display: grid; grid-template: repeat(3, 56px) / repeat(3, 56px); gap: 8px; justify-content: center; }
+        .control-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
+        .pad {
+          position: relative; width: 190px; height: 190px; flex: 0 0 190px;
+          border-radius: 50%; overflow: hidden;
+        }
         button {
-          min-width: 48px; min-height: 48px; border: 1px solid var(--divider-color);
-          border-radius: 50%; background: transparent; color: var(--primary-text-color);
-          font: inherit; font-size: 24px; cursor: pointer; touch-action: none;
+          border: 0; background: #385c72; color: #dce8ee;
+          font: inherit; cursor: pointer; touch-action: none;
           -webkit-touch-callout: none; transition: background .12s, color .12s, transform .12s;
         }
         button:focus-visible { outline: 3px solid var(--primary-color); outline-offset: 2px; }
-        button.active { background: var(--primary-color); color: var(--text-primary-color, white); transform: scale(.94); }
+        button.active { background: var(--primary-color); color: var(--text-primary-color, white); }
         button.pending { opacity: .55; }
-        .up { grid-area: 1 / 2; } .left { grid-area: 2 / 1; }
-        .stop { grid-area: 2 / 2; font-size: 12px; font-weight: 700; border-radius: 12px; }
-        .right { grid-area: 2 / 3; } .down { grid-area: 3 / 2; }
+        .direction {
+          position: absolute; inset: 0; width: 100%; height: 100%;
+          font-size: 20px; border-radius: 0;
+        }
+        .direction span { position: absolute; line-height: 1; }
+        .up { clip-path: polygon(12% 3%, 88% 3%, 68% 41%, 32% 41%); }
+        .up span { top: 16%; left: 50%; transform: translate(-50%, -50%); }
+        .right { clip-path: polygon(97% 12%, 97% 88%, 59% 68%, 59% 32%); }
+        .right span { top: 50%; right: 16%; transform: translate(50%, -50%); }
+        .down { clip-path: polygon(88% 97%, 12% 97%, 32% 59%, 68% 59%); }
+        .down span { bottom: 16%; left: 50%; transform: translate(-50%, 50%); }
+        .left { clip-path: polygon(3% 88%, 3% 12%, 41% 32%, 41% 68%); }
+        .left span { top: 50%; left: 16%; transform: translate(-50%, -50%); }
+        .center-hole {
+          position: absolute; z-index: 2; width: 72px; height: 72px; top: 50%; left: 50%;
+          border-radius: 50%; transform: translate(-50%, -50%);
+          background: var(--ha-card-background, var(--card-background-color));
+          cursor: default; pointer-events: auto;
+        }
+        .zoom { display: flex; flex-direction: column; gap: 14px; }
+        .zoom button {
+          width: 56px; height: 56px; border-radius: 50%; font-size: 28px; font-weight: 500;
+          box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%);
+        }
+        @media (max-width: 360px) {
+          .control-row { gap: 12px; }
+          .pad { width: 170px; height: 170px; flex-basis: 170px; }
+        }
       </style>
       <ha-card>
         <div class="title"></div>
-        <div class="camera"><div class="preview-message">Loading camera preview…</div></div>
         <div class="controls">
           <div class="status" aria-live="polite"></div>
-          <div class="pad" role="group" aria-label="PTZ controls">
-            <button class="up" data-direction="up" aria-label="Move up">▲</button>
-            <button class="left" data-direction="left" aria-label="Move left">◀</button>
-            <button class="stop" aria-label="Emergency stop">STOP</button>
-            <button class="right" data-direction="right" aria-label="Move right">▶</button>
-            <button class="down" data-direction="down" aria-label="Move down">▼</button>
+          <div class="control-row">
+            <div class="pad" role="group" aria-label="PTZ controls">
+              <button class="direction up" data-direction="up" aria-label="Move up"><span>▲</span></button>
+              <button class="direction right" data-direction="right" aria-label="Move right"><span>▶</span></button>
+              <button class="direction down" data-direction="down" aria-label="Move down"><span>▼</span></button>
+              <button class="direction left" data-direction="left" aria-label="Move left"><span>◀</span></button>
+              <div class="center-hole" aria-hidden="true"></div>
+            </div>
+            <div class="zoom" role="group" aria-label="Zoom controls">
+              <button data-direction="zoom_in" aria-label="Zoom in">+</button>
+              <button data-direction="zoom_out" aria-label="Zoom out">−</button>
+            </div>
           </div>
         </div>
       </ha-card>`;
@@ -147,56 +169,6 @@ class PtzCameraCard extends HTMLElement {
       button.addEventListener("pointerup", (event) => this._finishPointer(event));
       button.addEventListener("pointercancel", (event) => this._finishPointer(event));
       button.addEventListener("contextmenu", (event) => event.preventDefault());
-    }
-    this.shadowRoot.querySelector(".stop").addEventListener("click", (event) => {
-      event.preventDefault();
-      this._emergencyStop(true);
-    });
-  }
-
-  /** PL: Osadź standardowy podgląd camera HA nad D-padem. EN: Embed HA's standard camera preview above the D-pad. */
-  async _ensureCameraCard() {
-    const entity = this._config?.entity;
-    const container = this.shadowRoot?.querySelector(".camera");
-    if (!entity || !container || !this._hass) return;
-    if (this._cameraCard && this._cameraCardEntity === entity) {
-      this._cameraCard.hass = this._hass;
-      return;
-    }
-    if (this._cameraCardLoading) return;
-
-    this._cameraCardLoading = true;
-    this._cameraCardEntity = entity;
-    try {
-      const helpers = await window.loadCardHelpers();
-      if (this._config?.entity !== entity) return;
-      const cameraCard = helpers.createCardElement({
-        type: "picture-entity",
-        entity,
-        camera_image: entity,
-        camera_view: "live",
-        show_name: false,
-        show_state: false,
-        tap_action: { action: "more-info" },
-      });
-      cameraCard.hass = this._hass;
-      container.replaceChildren(cameraCard);
-      this._cameraCard = cameraCard;
-      console.info(LOG_PREFIX, "Camera preview attached", { entity_id: entity });
-    } catch (error) {
-      const message = this._message("preview");
-      container.replaceChildren();
-      const errorElement = document.createElement("div");
-      errorElement.className = "preview-message";
-      errorElement.textContent = message;
-      container.append(errorElement);
-      console.error(LOG_PREFIX, "Could not attach camera preview", {
-        entity_id: entity,
-        name: error?.name ?? "Error",
-        message: error?.message ?? String(error),
-      });
-    } finally {
-      this._cameraCardLoading = false;
     }
   }
 
@@ -219,7 +191,6 @@ class PtzCameraCard extends HTMLElement {
   _message(kind) {
     const polish = (this._hass?.language ?? "en").toLowerCase().startsWith("pl");
     if (kind === "sending") return polish ? "Wysyłanie polecenia…" : "Sending command…";
-    if (kind === "preview") return polish ? "Nie udało się załadować podglądu kamery." : "Could not load the camera preview.";
     return polish ? "Nie udało się wysłać polecenia PTZ." : "Could not send the PTZ command.";
   }
 
@@ -309,7 +280,7 @@ class PtzCameraCard extends HTMLElement {
     this._updateView();
   }
 
-  /** PL: Zatrzymaj wszystko przy utracie kontroli lub STOP. EN: Stop everything on control loss or STOP. */
+  /** PL: Zatrzymaj wszystko przy utracie kontroli. EN: Stop everything when control is lost. */
   async _emergencyStop(force = false, suppressErrors = false) {
     if (!force && !this._activeDirection) return;
     this._activeDirection = null;
@@ -328,7 +299,10 @@ class PtzCameraCard extends HTMLElement {
   /** PL: Uruchom kierunek klawiszem bez autorepeat. EN: Start a direction by keyboard without auto-repeat. */
   _onKeyDown(event) {
     if (event.repeat) return;
-    const map = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
+    const map = {
+      ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+      "+": "zoom_in", "=": "zoom_in", "-": "zoom_out", _: "zoom_out",
+    };
     if (event.key === "Escape") {
       event.preventDefault();
       this._emergencyStop(true);
@@ -342,7 +316,10 @@ class PtzCameraCard extends HTMLElement {
 
   /** PL: Zatrzymaj kierunek po puszczeniu klawisza. EN: Stop the direction when the key is released. */
   _onKeyUp(event) {
-    const map = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
+    const map = {
+      ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+      "+": "zoom_in", "=": "zoom_in", "-": "zoom_out", _: "zoom_out",
+    };
     const direction = map[event.key];
     if (!direction) return;
     event.preventDefault();

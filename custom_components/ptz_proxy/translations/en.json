@@ -87,13 +87,13 @@
       "description": "Start or stop PTZ movement.",
       "fields": {
         "action": { "name": "Action", "description": "Start or stop movement." },
-        "direction": { "name": "Direction", "description": "Movement direction; all is valid only for stop." }
+        "direction": { "name": "Direction", "description": "Movement or zoom direction; all is valid only for stop." }
       }
     }
   },
   "selector": {
     "ptz_action": { "options": { "start": "Start movement", "stop": "Stop movement" } },
-    "ptz_direction": { "options": { "up": "Up", "down": "Down", "left": "Left", "right": "Right", "all": "All directions" } }
+    "ptz_direction": { "options": { "up": "Up", "down": "Down", "left": "Left", "right": "Right", "zoom_in": "Zoom in", "zoom_out": "Zoom out", "all": "All directions" } }
   },
   "exceptions": {
     "invalid_movement": { "message": "The action or direction is invalid." },

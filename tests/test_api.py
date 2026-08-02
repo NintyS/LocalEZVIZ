@@ -143,6 +143,8 @@ async def test_health_invalid_response(hass: HomeAssistant, aioclient_mock, payl
     [
         (PtzAction.START, PtzDirection.UP, 200),
         (PtzAction.STOP, PtzDirection.UP, 204),
+        (PtzAction.START, PtzDirection.ZOOM_IN, 200),
+        (PtzAction.STOP, PtzDirection.ZOOM_OUT, 204),
         (PtzAction.STOP, PtzDirection.ALL, 204),
     ],
 )

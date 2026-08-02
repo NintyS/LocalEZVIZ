@@ -27,3 +27,12 @@ async def test_stop_all_is_allowed() -> None:
     entity, client = _entity()
     await entity.async_ptz_move("stop", "all")
     client.async_move.assert_awaited_once()
+
+
+@pytest.mark.parametrize("direction", ["zoom_in", "zoom_out"])
+async def test_zoom_directions_are_allowed(direction: str) -> None:
+    """PL: Oba kierunki zoomu docierają do klienta. EN: Both zoom directions reach the client."""
+
+    entity, client = _entity()
+    await entity.async_ptz_move("start", direction)
+    client.async_move.assert_awaited_once()

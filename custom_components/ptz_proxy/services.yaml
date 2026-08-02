@@ -18,7 +18,7 @@ move:
             - stop
     direction:
       name: Direction
-      description: Movement direction; all is valid only with stop.
+      description: Movement or zoom direction; all is valid only with stop.
       required: true
       selector:
         select:
@@ -28,4 +28,6 @@ move:
             - down
             - left
             - right
+            - zoom_in
+            - zoom_out
             - all

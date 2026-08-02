@@ -87,13 +87,13 @@
       "description": "Rozpocznij albo zatrzymaj ruch PTZ.",
       "fields": {
         "action": { "name": "Akcja", "description": "Rozpoczęcie albo zatrzymanie ruchu." },
-        "direction": { "name": "Kierunek", "description": "Kierunek ruchu; wszystkie jest dozwolone tylko dla zatrzymania." }
+        "direction": { "name": "Kierunek", "description": "Kierunek ruchu lub zoomu; wszystkie jest dozwolone tylko dla zatrzymania." }
       }
     }
   },
   "selector": {
     "ptz_action": { "options": { "start": "Rozpocznij ruch", "stop": "Zatrzymaj ruch" } },
-    "ptz_direction": { "options": { "up": "Góra", "down": "Dół", "left": "Lewo", "right": "Prawo", "all": "Wszystkie kierunki" } }
+    "ptz_direction": { "options": { "up": "Góra", "down": "Dół", "left": "Lewo", "right": "Prawo", "zoom_in": "Przybliż", "zoom_out": "Oddal", "all": "Wszystkie kierunki" } }
   },
   "exceptions": {
     "invalid_movement": { "message": "Akcja lub kierunek są niepoprawne." },

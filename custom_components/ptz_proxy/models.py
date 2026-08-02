@@ -26,12 +26,14 @@ class PtzAction(StrEnum):
 
 
 class PtzDirection(StrEnum):
-    """PL: Dozwolony kierunek ruchu MVP. EN: Allowed MVP movement direction."""
+    """PL: Dozwolony kierunek ruchu albo zoomu. EN: Allowed movement or zoom direction."""
 
     UP = "up"
     DOWN = "down"
     LEFT = "left"
     RIGHT = "right"
+    ZOOM_IN = "zoom_in"
+    ZOOM_OUT = "zoom_out"
     ALL = "all"
 
 

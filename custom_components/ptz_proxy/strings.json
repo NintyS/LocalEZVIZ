@@ -96,7 +96,7 @@
         },
         "direction": {
           "name": "Direction",
-          "description": "Movement direction; all is valid only for stop."
+          "description": "Movement or zoom direction; all is valid only for stop."
         }
       }
     }
@@ -114,6 +114,8 @@
         "down": "Down",
         "left": "Left",
         "right": "Right",
+        "zoom_in": "Zoom in",
+        "zoom_out": "Zoom out",
         "all": "All directions"
       }
     }

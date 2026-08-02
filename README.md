@@ -1,6 +1,6 @@
 # PTZ Proxy dla Home Assistant
 
-PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.2.1` obsługuje ruch góra, dół, lewo, prawo, awaryjne zatrzymanie oraz standardowy podgląd RTSP Home Assistanta.
+PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.3.0` obsługuje ruch góra, dół, lewo, prawo, przybliżanie, oddalanie i awaryjne zatrzymanie.
 
 ## Co dostajesz
 
@@ -8,7 +8,7 @@ PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nows
 - kontrolę `GET /health` przed zapisaniem konfiguracji;
 - dowolną liczbę kamer jako config subentries;
 - osobną encję `camera` i urządzenie dla każdej kamery;
-- pionową kartę z obrazem kamery nad D-padem;
+- kartę z okrągłym D-padem i osobnymi przyciskami zoomu;
 - akcję `ptz_proxy.move` z kontrolą uprawnień encji;
 - automatycznie ładowaną kartę `custom:ptz-camera-card`;
 - D-pad działający na myszce, ekranie dotykowym i klawiaturze;
@@ -77,7 +77,7 @@ Przykładowy start:
 }
 ```
 
-Puszczenie kierunku wysyła `stop` z tym samym kierunkiem. Centralny STOP wysyła `{"action":"stop","direction":"all", ...}`. Sukcesem jest dowolny status `2xx`, w tym puste `204`. Integracja nie wykonuje retry.
+Puszczenie kierunku lub zoomu wysyła `stop` z tym samym kierunkiem. Zoom używa wartości `zoom_in` i `zoom_out`. Awaryjne zatrzymanie wysyła `{"action":"stop","direction":"all", ...}`. Sukcesem jest dowolny status `2xx`, w tym puste `204`. Integracja nie wykonuje retry.
 
 > **Ważny bezpiecznik:** serwer PTZ musi sam zatrzymać kamerę po 5–10 sekundach ciągłego ruchu. Nie wolno zakładać, że przeglądarka zawsze dostarczy `pointerup` lub że komenda `stop` dotrze przez uszkodzoną sieć.
 
@@ -137,7 +137,7 @@ type: custom:ptz-camera-card
 entity: camera.kamera_salon
 ```
 
-Karta układa elementy pionowo: najpierw standardowy podgląd `camera` Home Assistanta, a pod nim D-pad. Stream RTSP jest otwierany przez backend i komponent `stream`; adres RTSP oraz jego dane logowania nie trafiają do JavaScriptu.
+Karta pokazuje okrągły D-pad oraz dwa przyciski zoomu. W wersji `0.3.0` nie renderuje obrazu RTSP. Obsługa RTSP pozostaje w encji Home Assistanta, więc można nadal wyświetlić kamerę osobną standardową kartą HA.
 
 Sterowanie:
 
@@ -145,9 +145,11 @@ Sterowanie:
 |---|---|
 | przytrzymanie ▲ ▼ ◀ ▶ | `start` w odpowiednim kierunku |
 | puszczenie lub anulowanie dotyku | `stop` dla aktywnego kierunku |
-| centralny STOP lub Escape | `stop/all` |
+| przytrzymanie `+` / `−` | `start/zoom_in` albo `start/zoom_out` |
+| puszczenie `+` / `−` | zatrzymanie odpowiedniego zoomu |
+| Escape | `stop/all` |
 | utrata fokusu, ukrycie aplikacji, usunięcie karty | awaryjne `stop/all` |
-| strzałki klawiatury | start przy wciśnięciu, stop przy puszczeniu |
+| strzałki oraz `+` / `−` na klawiaturze | start przy wciśnięciu, stop przy puszczeniu |
 
 ## Użycie w automatyzacji
 
@@ -204,7 +206,7 @@ Jeżeli nie widzisz karty, sprawdź log ładowania integracji, zrestartuj HA i w
 
 ## Logi diagnostyczne
 
-Wersja `0.2.1` zapisuje w logach Home Assistanta wersję integracji, żądania HTTP bez payloadu, statusy odpowiedzi, wynik health oraz komendy PTZ. Odpowiedź health pokazuje tylko bezpieczną listę pól: `ok`, `status`, `backend`, `connected_sessions`, `version` i `name`. Tokeny, hasła oraz wartości nieznanych pól nie są logowane.
+Wersja `0.3.0` zapisuje w logach Home Assistanta wersję integracji, żądania HTTP bez payloadu, statusy odpowiedzi, wynik health oraz komendy PTZ. Odpowiedź health pokazuje tylko bezpieczną listę pól: `ok`, `status`, `backend`, `connected_sessions`, `version` i `name`. Tokeny, hasła oraz wartości nieznanych pól nie są logowane.
 
 Aby zobaczyć również wpisy poziomu debug, dodaj do `configuration.yaml`:
 
@@ -214,7 +216,7 @@ logger:
     custom_components.ptz_proxy: debug
 ```
 
-Następnie uruchom HA ponownie i otwórz **Ustawienia → System → Logi**. Karta wypisuje załadowanie obrazu, wysłanie, powodzenie i błąd komendy w narzędziach deweloperskich przeglądarki pod prefiksem `[PTZ Proxy 0.2.1]`. Ekran dodawania integracji należy do frontendowego Core HA, dlatego szczegóły jego `/health` są kierowane do formularza i logów HA, a nie do własnego skryptu karty.
+Następnie uruchom HA ponownie i otwórz **Ustawienia → System → Logi**. Karta wypisuje wysłanie, powodzenie i błąd komendy w narzędziach deweloperskich przeglądarki pod prefiksem `[PTZ Proxy 0.3.0]`. Ekran dodawania integracji należy do frontendowego Core HA, dlatego szczegóły jego `/health` są kierowane do formularza i logów HA, a nie do własnego skryptu karty.
 
 ## Testy deweloperskie
 
@@ -231,4 +233,4 @@ Hassfest uruchamia workflow `.github/workflows/hassfest.yaml` na GitHubie.
 
 ## Obraz RTSP
 
-Wersja `0.2.1` ustawia `CameraEntityFeature.STREAM`, a `stream_source` zwraca prywatny adres RTSP wyłącznie backendowi. Standardowa karta obrazu HA jest osadzona nad D-padem. Jeżeli RTSP pozostanie puste, encja PTZ nadal będzie dostępna i będzie sterować kamerą, ale karta nie pokaże obrazu. Adres RTSP musi być osiągalny z hosta Home Assistanta, nie tylko z komputera użytkownika.
+Encja nadal ustawia `CameraEntityFeature.STREAM`, a `stream_source` zwraca prywatny adres RTSP wyłącznie backendowi. Wersja `0.3.0` celowo nie osadza obrazu w karcie PTZ. Jeżeli potrzebujesz obrazu, dodaj obok osobną standardową kartę kamery Home Assistanta. Adres RTSP musi być osiągalny z hosta Home Assistanta, nie tylko z komputera użytkownika.

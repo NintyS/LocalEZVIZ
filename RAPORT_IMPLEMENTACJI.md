@@ -158,6 +158,7 @@ W reconfigure pusty token oznacza „zachowaj stary”. Nowy token trafia do con
 |---|---|---|
 | `start` | `up/down/left/right` | tak |
 | `stop` | `up/down/left/right` | tak |
+| `start/stop` | `zoom_in/zoom_out` | tak |
 | `stop` | `all` | tak, awaryjny STOP |
 | `start` | `all` | **nie** |
 
@@ -170,7 +171,7 @@ Każda camera subentry tworzy dokładnie jedną `PtzProxyCamera`. Wersja `0.2.0`
 - ma `has_entity_name = True`;
 - ma `should_poll = False`;
 - ma funkcję STREAM, gdy skonfigurowano RTSP;
-- przekazuje RTSP tylko do backendowego komponentu `stream` i tworzy z niego podgląd;
+- przekazuje RTSP tylko do backendowego komponentu `stream`; własna karta PTZ tymczasowo nie renderuje obrazu;
 - posiada stabilny unique ID `parent_entry_id + camera_uuid`;
 - jest przypisana do właściwego config subentry;
 - tworzy urządzenie `Generic / PTZ Proxy Camera`;
@@ -194,7 +195,7 @@ Nie ma osobnej usługi dla każdego serwera i nie ma własnego endpointu HTTP om
 
 Karta jest modułem bez zewnętrznego frameworka. Backend serwuje ją jako statyczny plik i dopisuje jako extra JS module. Nie modyfikuje `.storage/lovelace_resources` i nie wymaga `/config/www`.
 
-Układ jest pionowy: standardowa karta `picture-entity` z `camera_view: live` znajduje się nad D-padem. Dzięki temu obraz jest renderowany mechanizmem Home Assistanta, a JavaScript PTZ nie otrzymuje adresu RTSP ani danych logowania.
+Karta pokazuje okrągły, czterokierunkowy D-pad z pustym środkiem oraz dwa okrągłe przyciski zoomu. Nie ma widocznego przycisku STOP ani podglądu RTSP. Adres RTSP i dane logowania nadal nie trafiają do JavaScriptu. Przyciski zoomu używają tego samego bezpiecznego cyklu `pointerdown → start` i `pointerup/pointercancel → stop` co kierunki ruchu.
 
 ### Maszyna bezpieczeństwa ruchu
 
@@ -209,9 +210,9 @@ Układ jest pionowy: standardowa karta `picture-entity` z `camera_view: live` zn
 | `disconnectedCallback` | `stop/all` |
 | zmiana encji | stop starej encji przed zmianą |
 | błąd start | usuń aktywny stan, spróbuj `stop/all`, pokaż krótki błąd |
-| centralny STOP | zawsze `stop/all` |
+| Escape | zawsze `stop/all` |
 
-Element ma pola dotykowe 56×56 px, `touch-action: none`, blokadę menu kontekstowego, stany active/pending, `aria-label` i obsługę klawiatury. `event.repeat` jest ignorowane.
+Pierścień D-pada ma 190×190 px, przyciski zoomu 56×56 px, a wszystkie kontrolki mają `touch-action: none`, blokadę menu kontekstowego, stany active/pending, `aria-label` i obsługę klawiatury. `event.repeat` jest ignorowane.
 
 Edytor pobiera entity registry i filtruje wyłącznie encje `camera` z platformą `ptz_proxy`. Brak kamery daje czytelny komunikat.
 
@@ -258,7 +259,7 @@ Diagnostyka urządzenia zawiera nazwę, camera IP i trzy flagi obecności userna
 | `diagnostics.py` | diagnostyka parent entry oraz urządzenia |
 | `entity.py` | wspólna tożsamość encji i DeviceInfo |
 | `models.py` | enumy, dataclasses i typed ConfigEntry |
-| `frontend/ptz-camera-card.js` | karta D-pad i jej graficzny edytor |
+| `frontend/ptz-camera-card.js` | kołowy D-pad, zoom i graficzny edytor karty |
 | `services.yaml` | opis targetu i pól akcji |
 | `strings.json` | źródłowe napisy integracji |
 | `translations/en.json`, `pl.json` | kompletne tłumaczenia |
@@ -282,12 +283,12 @@ Każdy moduł, klasa, dataclass, enum, metoda i funkcja ma docstring albo koment
 | zachowanie flow | typ FORM, ten sam step, suggested values, brak config entry, retry w tym samym flow |
 | sekrety flow | token nie występuje w placeholders; stary token przetrwa blank reconfigure |
 | subentries | dodanie UUID, rekonfiguracja, zachowanie hasła |
-| PTZ | dokładny JSON, 200, 204, stop/all, odrzucenie start/all, brak retry |
+| PTZ | dokładny JSON, ruch, zoom, 200, 204, stop/all, odrzucenie start/all, brak retry |
 | encja | unique ID, DeviceInfo, inicjalizacja Camera, RTSP/STREAM, tryb bez RTSP, prywatny CameraConfig |
 | diagnostyka | brak tokenu, hasła, username i RTSP |
-| frontend | obecność pointer safety, blur/visibility, keyboard repeat i logów konsoli; brak sekretów i fetch |
+| frontend | kołowy D-pad, zoom, brak obrazu i STOP, pointer safety, blur/visibility, keyboard repeat i logi; brak sekretów i fetch |
 
-Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Home Assistant `2026.8.0b3`, czyli wersji nowszej od minimalnej `2026.7`. Wynik: **54 testy zaliczone, 0 błędów**. Niezależnie wykonano kompilację wszystkich modułów Python, lint i formatowanie Ruff, walidację wszystkich plików JSON i YAML, kontrolę parytetu kluczy tłumaczeń, kontrolę składni JavaScriptu, test kontraktu karty oraz audyt dwujęzycznych docstringów.
+Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Home Assistant `2026.8.0b3`, czyli wersji nowszej od minimalnej `2026.7`. Wynik: **58 testów zaliczonych, 0 błędów**. Niezależnie wykonano kompilację wszystkich modułów Python, lint i formatowanie Ruff, walidację wszystkich plików JSON i YAML, kontrolę parytetu kluczy tłumaczeń, kontrolę składni JavaScriptu, test kontraktu karty oraz audyt dwujęzycznych docstringów.
 
 ## 18. Kryteria ukończenia
 
@@ -301,18 +302,19 @@ Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Ho
 | pointerdown/start | gotowe | `_onPointerDown` |
 | pointerup/cancel/stop | gotowe | `_finishPointer` |
 | blur/hidden/disconnect stop | gotowe | lifecycle JS |
-| centralne stop/all | gotowe | `.stop` handler |
+| awaryjne stop/all | gotowe | Escape i lifecycle JS |
+| przybliżanie i oddalanie | gotowe | `zoom_in`, `zoom_out` |
 | brak sekretów frontend/state | gotowe | rozdział backend/frontend |
 | błędy formularza z zachowaniem pól | gotowe | suggested values |
 | reload/unload | gotowe | update listener + platform unload |
 | PL/EN | gotowe | strings i translations |
 | ręczna instalacja/HACS | gotowe | README + hacs.json |
-| RTSP i obraz nad D-padem | gotowe | `stream_source`, STREAM i osadzona `picture-entity` |
+| RTSP w backendzie, bez obrazu w karcie | gotowe | `stream_source`, STREAM; frontend bez `picture-entity` |
 
 ## 19. Znane ograniczenia MVP
 
-1. Obraz wymaga poprawnego RTSP osiągalnego z hosta HA; nie ma osobnego endpointu snapshot kamery.
-2. Brak zoomu, focusu, presetów, patrolu i kierunków diagonalnych.
+1. Karta PTZ tymczasowo nie renderuje obrazu RTSP; obraz można dodać jako osobną standardową kartę HA.
+2. Brak focusu, presetów, patrolu i kierunków diagonalnych.
 3. Brak automatycznego wykrywania kamer.
 4. Sterowanie nie komunikuje się bezpośrednio z kamerą — wymagany jest zgodny serwer PTZ.
 5. Komunikaty techniczne w placeholders są kontrolowane i obecnie angielskie; przyjazna warstwa błędu jest tłumaczona przez HA.

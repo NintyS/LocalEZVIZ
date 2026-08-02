@@ -21,14 +21,22 @@ for (const required of [
   "setPointerCapture",
   "console.info",
   "console.error",
-  "loadCardHelpers",
-  'type: "picture-entity"',
-  'camera_view: "live"',
+  'data-direction="zoom_in"',
+  'data-direction="zoom_out"',
+  "center-hole",
 ]) {
   assert.ok(source.includes(required), `Missing frontend safety mechanism: ${required}`);
 }
 // PL: Frontend nie może zawierać pól sekretów ani własnego POST do serwera.
 // EN: The frontend must not contain secret fields or direct server POST calls.
-for (const forbidden of ["api_token", "camera_ip", '"password"', "fetch("]) {
+for (const forbidden of [
+  "api_token",
+  "camera_ip",
+  '"password"',
+  "fetch(",
+  "loadCardHelpers",
+  'type: "picture-entity"',
+  'class="stop"',
+]) {
   assert.equal(source.includes(forbidden), false, `Forbidden frontend value: ${forbidden}`);
 }
