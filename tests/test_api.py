@@ -67,6 +67,20 @@ async def test_health_success(hass: HomeAssistant, aioclient_mock) -> None:
     assert request[3]["Authorization"] == "Bearer token"
 
 
+async def test_health_hcnet_boolean_success(hass: HomeAssistant, aioclient_mock) -> None:
+    """PL: Format HCNet z ok=true jest akceptowany. EN: The HCNet format with ok=true is accepted."""
+
+    aioclient_mock.get(
+        "http://ptz.lan:8080/health",
+        json={"ok": True, "backend": "hcnet", "connected_sessions": 0},
+    )
+    client = PtzProxyClient(async_get_clientsession(hass), "http://ptz.lan:8080", "", True, 3)
+
+    result = await client.async_health()
+
+    assert result.status == "ok"
+
+
 @pytest.mark.parametrize("status", [HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN])
 async def test_health_invalid_auth(hass: HomeAssistant, aioclient_mock, status: HTTPStatus) -> None:
     """PL: 401 i 403 mają kategorię invalid_auth. EN: 401 and 403 use the invalid_auth category."""
@@ -91,7 +105,7 @@ async def test_health_http_error(hass: HomeAssistant, aioclient_mock, status: in
     assert caught.value.details.http_status == status
 
 
-@pytest.mark.parametrize("payload", ["not-json", "[]", '{"status":"error"}', "{}"])
+@pytest.mark.parametrize("payload", ["not-json", "[]", '{"status":"error"}', '{"ok":false}', "{}"])
 async def test_health_invalid_response(hass: HomeAssistant, aioclient_mock, payload: str) -> None:
     """PL: Niepoprawna treść nigdy nie wystarcza do zapisu. EN: Invalid content never qualifies for persistence."""
 

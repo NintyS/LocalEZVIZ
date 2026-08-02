@@ -313,11 +313,13 @@ class PtzProxyClient:
                         "The health response must be a JSON object.",
                     )
                 )
-            if payload.get("status") != "ok":
+            status_is_ok = payload.get("status") == "ok"
+            boolean_is_ok = payload.get("ok") is True
+            if not status_is_ok and not boolean_is_ok:
                 detail = (
-                    "The health response does not contain the required status field."
-                    if "status" not in payload
-                    else "The health status is not ok."
+                    "The health response must contain status='ok' or ok=true."
+                    if "status" not in payload and "ok" not in payload
+                    else "The health response reports that the backend is not ready."
                 )
                 raise PtzProxyInvalidResponseError(
                     ErrorDetails("invalid_health_response", "invalid_health_response", detail)

@@ -112,7 +112,7 @@ Konfiguracja jest zapisywana wyłącznie po spełnieniu wszystkich warunków:
 | status | dokładnie `200` |
 | format | poprawny dokument JSON |
 | główny typ JSON | obiekt |
-| pole `status` | dokładnie tekst `ok` |
+| sygnał gotowości | `"status": "ok"` albo `"ok": true` (format HCNet) |
 
 Token jest dołączany jako `Authorization: Bearer …` tylko wtedy, gdy nie jest pusty. Nie jest umieszczany w URL. Sesja `aiohttp` pochodzi z `async_get_clientsession(hass)`, więc integracja nie tworzy sesji na każde żądanie.
 
@@ -126,7 +126,7 @@ stateDiagram-v2
     Formularz --> HealthCheck: Zatwierdź
     HealthCheck --> Formularz: błąd + te same wartości
     Formularz --> HealthCheck: popraw jedno pole
-    HealthCheck --> ConfigEntry: status 200 + JSON status ok
+    HealthCheck --> ConfigEntry: HTTP 200 + status ok lub ok=true
     ConfigEntry --> [*]
 ```
 
@@ -144,7 +144,7 @@ W reconfigure pusty token oznacza „zachowaj stary”. Nowy token trafia do con
 | `invalid_auth` | HTTP 401 lub 403 | tak |
 | `http_error` | np. 404, 429, 500, 503 | tak |
 | `invalid_json` | odpowiedzi nie da się zdekodować | nie |
-| `invalid_health_response` | brak obiektu lub `status != ok` | nie |
+| `invalid_health_response` | brak obiektu albo brak `status=ok` i `ok=true` | nie |
 | `redirect_error` | HTTP 3xx | tak |
 | `unknown` | nieoczekiwany wyjątek | nie |
 
@@ -285,7 +285,7 @@ Każdy moduł, klasa, dataclass, enum, metoda i funkcja ma docstring albo koment
 | diagnostyka | brak tokenu, hasła, username i RTSP |
 | frontend | obecność pointer safety, blur/visibility, keyboard repeat; brak sekretów i fetch |
 
-Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Home Assistant `2026.8.0b3`, czyli wersji nowszej od minimalnej `2026.7`. Wynik: **50 testów zaliczonych, 0 błędów**. Niezależnie wykonano kompilację wszystkich modułów Python, lint i formatowanie Ruff, walidację wszystkich plików JSON i YAML, kontrolę parytetu kluczy tłumaczeń, kontrolę składni JavaScriptu, test kontraktu karty oraz audyt dwujęzycznych docstringów.
+Pełny zestaw uruchomiono z `pytest-homeassistant-custom-component` przeciwko Home Assistant `2026.8.0b3`, czyli wersji nowszej od minimalnej `2026.7`. Wynik: **52 testy zaliczone, 0 błędów**. Niezależnie wykonano kompilację wszystkich modułów Python, lint i formatowanie Ruff, walidację wszystkich plików JSON i YAML, kontrolę parytetu kluczy tłumaczeń, kontrolę składni JavaScriptu, test kontraktu karty oraz audyt dwujęzycznych docstringów.
 
 ## 18. Kryteria ukończenia
 

@@ -1,6 +1,6 @@
 # PTZ Proxy dla Home Assistant
 
-PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.1.0` jest świadomie małym MVP: obsługuje ruch góra, dół, lewo, prawo oraz awaryjne zatrzymanie. Nie wyświetla jeszcze obrazu RTSP.
+PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.1.1` jest świadomie małym MVP: obsługuje ruch góra, dół, lewo, prawo oraz awaryjne zatrzymanie. Nie wyświetla jeszcze obrazu RTSP.
 
 ## Co dostajesz
 
@@ -44,7 +44,17 @@ Serwer musi odpowiedzieć statusem `200` i JSON-em:
 }
 ```
 
-Może dodać np. `version` i `name`. Przekierowania, inny status, niepoprawny JSON albo brak `status: ok` blokują zapis konfiguracji.
+Akceptowany jest także format używany przez backend HCNet:
+
+```json
+{
+  "ok": true,
+  "backend": "hcnet",
+  "connected_sessions": 0
+}
+```
+
+Odpowiedź może zawierać dodatkowe pola. Przekierowania, inny status HTTP, niepoprawny JSON albo brak zarówno `"status": "ok"`, jak i `"ok": true` blokują zapis konfiguracji.
 
 ### Sterowanie PTZ
 
@@ -184,7 +194,7 @@ Jeżeli automatyzacja wysyła `start`, zawsze zaplanuj odpowiadający `stop`. Ko
 | `invalid_auth` | HTTP 401/403 | token Bearer |
 | `http_error` | inny status HTTP | pokazany osobno status, np. 404/503 |
 | `invalid_json` | endpoint nie oddaje JSON | implementację `/health` |
-| `invalid_health_response` | brak dokładnego `status: ok` | strukturę odpowiedzi |
+| `invalid_health_response` | brak `status: ok` oraz `ok: true` | strukturę odpowiedzi |
 | `redirect_error` | 3xx | podaj końcowy adres bez przekierowania |
 
 Jeżeli nie widzisz karty, sprawdź log ładowania integracji, zrestartuj HA i wykonaj twarde odświeżenie przeglądarki. Nie dodawaj ręcznie `/ptz_proxy_static/ptz-camera-card.js` do zasobów.
@@ -204,4 +214,4 @@ Hassfest uruchamia workflow `.github/workflows/hassfest.yaml` na GitHubie.
 
 ## Plan RTSP
 
-Pole `rtsp_url` jest już zachowywane prywatnie, ale wersja `0.1.0` nie ustawia `CameraEntityFeature.STREAM`. Następny etap powinien użyć standardowego `stream_source` Home Assistanta, bez dekodera RTSP w JavaScripcie i bez ujawniania danych logowania. Własny D-pad może wtedy znaleźć się pod standardowym podglądem HA.
+Pole `rtsp_url` jest już zachowywane prywatnie, ale wersja `0.1.1` nie ustawia `CameraEntityFeature.STREAM`. Następny etap powinien użyć standardowego `stream_source` Home Assistanta, bez dekodera RTSP w JavaScripcie i bez ujawniania danych logowania. Własny D-pad może wtedy znaleźć się pod standardowym podglądem HA.
