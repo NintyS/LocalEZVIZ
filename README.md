@@ -1,5 +1,7 @@
 # PTZ Proxy dla Home Assistant
 
+**Polski** | [English](README_EN.md)
+
 PTZ Proxy to niestandardowa integracja dla Home Assistant Core **2026.7 lub nowszego**. Łączy Home Assistanta z lokalnym serwerem HTTP, który zna sposób sterowania fizycznymi kamerami. Wersja `0.3.0` obsługuje ruch góra, dół, lewo, prawo, przybliżanie, oddalanie i awaryjne zatrzymanie.
 
 ## Co dostajesz
@@ -97,7 +99,7 @@ Nie dodawaj niczego do `configuration.yaml` ani do zasobów Lovelace. Backend ud
 ## Instalacja przez HACS
 
 1. W HACS otwórz menu i wybierz **Niestandardowe repozytoria**.
-2. Wklej adres repozytorium zawierającego ten projekt.
+2. Wklej adres `https://github.com/NintyS/LocalEZVIZ`.
 3. Wybierz kategorię **Integration** i dodaj repozytorium.
 4. Wyszukaj **PTZ Proxy**, zainstaluj i uruchom ponownie Home Assistant.
 
@@ -233,4 +235,13 @@ Hassfest uruchamia workflow `.github/workflows/hassfest.yaml` na GitHubie.
 
 ## Obraz RTSP
 
-Encja nadal ustawia `CameraEntityFeature.STREAM`, a `stream_source` zwraca prywatny adres RTSP wyłącznie backendowi. Wersja `0.3.0` celowo nie osadza obrazu w karcie PTZ. Jeżeli potrzebujesz obrazu, dodaj obok osobną standardową kartę kamery Home Assistanta. Adres RTSP musi być osiągalny z hosta Home Assistanta, nie tylko z komputera użytkownika.
+Encja nadal ustawia `CameraEntityFeature.STREAM`, a `stream_source` zwraca prywatny adres RTSP wyłącznie backendowi. Wersja `0.3.0` celowo nie osadza obrazu w karcie PTZ. Aby wyświetlić obraz na żywo, dodaj obok osobną standardową kartę Home Assistanta:
+
+```yaml
+type: picture-glance
+camera_image: camera.kamera_salon
+camera_view: live
+entities: []
+```
+
+Adres RTSP musi być osiągalny z hosta Home Assistanta, nie tylko z komputera użytkownika.

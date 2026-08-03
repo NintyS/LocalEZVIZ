@@ -268,10 +268,11 @@ Diagnostyka urządzenia zawiera nazwę, camera IP i trzy flagi obecności userna
 | `tests/` | testy API, flow, subentries, encji, usługi, diagnostyki, setupu i JS |
 | `hacs.json` | zgodność z HACS i minimalna wersja HA |
 | `.github/workflows/` | Hassfest i testy CI |
+| `README.md`, `README_EN.md` | pełna instrukcja użytkownika po polsku i angielsku |
 
 ## 16. Dwujęzyczna dokumentacja kodu
 
-Każdy moduł, klasa, dataclass, enum, metoda i funkcja ma docstring albo komentarz w formacie `PL: … / EN: …`. Struktury stałych i schematów mają dwujęzyczne komentarze blokowe. Ta zasada obejmuje również metody JavaScriptu i funkcje testowe. Dzięki temu kod można czytać bez konieczności korzystania wyłącznie z niniejszego raportu.
+Każdy moduł, klasa, dataclass, enum, metoda i funkcja ma docstring albo komentarz w formacie `PL: … / EN: …`. Struktury stałych i schematów mają dwujęzyczne komentarze blokowe. Ta zasada obejmuje również metody JavaScriptu i funkcje testowe. Instrukcja użytkownika jest dostępna jako polski `README.md` oraz angielski `README_EN.md`, z przełącznikiem języka w obu plikach.
 
 ## 17. Zakres testów
 
